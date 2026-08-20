@@ -36,4 +36,4 @@
 ## Certification
 
 - Notes：见 `certification-notes.md`
-- Public test document URL：待提供
+- Public test document URL：https://www.feishu.cn/docx/doxcnyzM1jOYaHHvJF6BtyrXpjb

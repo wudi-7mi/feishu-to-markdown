@@ -22,8 +22,8 @@
 - [x] 公开项目主页：https://github.com/wudi-7mi/feishu-to-markdown
 - [x] 公开支持邮箱：wudi7mi@gmail.com
 - [x] 隐私政策：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
-- [ ] 审核人员可访问的飞书/Lark 测试文档 URL
-- [ ] 如果测试文档需要登录，提供审核测试账号或改用公开只读文档
+- [x] 审核测试文档：https://www.feishu.cn/docx/doxcnyzM1jOYaHHvJF6BtyrXpjb
+- [ ] 确认该测试文档无需登录即可读取和选择内容
 - [x] 上架范围：Public
 - [x] 上架市场范围：中国
 - [ ] 商店分类，建议选择 Productivity/生产力

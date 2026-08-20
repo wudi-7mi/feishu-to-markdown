@@ -12,7 +12,7 @@
 
 ## Test document
 
-Public test document URL: `SUBMISSION_OWNER_TO_PROVIDE`
+Public test document URL: https://www.feishu.cn/docx/doxcnyzM1jOYaHHvJF6BtyrXpjb
 
 No account credentials are included in the extension. If the test document requires authentication, provide a reviewer-accessible account or a public read-only document in Partner Center.
 
