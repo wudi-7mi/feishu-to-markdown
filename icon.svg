@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>飞书 To Markdown</title>
+  <rect width="64" height="64" rx="14" fill="#1456f0"/>
+  <path d="M9 47V17h8l10 13 10-13h8v30h-8V29L27 42 17 29v18z" fill="#fff"/>
+  <path d="M51 18v22m-7-7 7 7 7-7" fill="none" stroke="#72e2c0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
