@@ -26,7 +26,7 @@
 - Detailed description：见 `listing-zh-CN.md`
 - Logo：`logo-300.png`
 - Screenshot：`screenshot-settings-1280x800.png`
-- Search terms：飞书 Markdown；Lark Markdown；文档转换；富文本转换；复制 Markdown
+- Search terms：飞书 Markdown；企业飞书；Lark Markdown；文档转换；复制 Markdown
 
 ## Developer
 

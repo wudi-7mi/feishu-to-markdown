@@ -3,6 +3,6 @@
     "message": "飞书 To Markdown"
   },
   "extensionDescription": {
-    "message": "在飞书文档中按 Ctrl+C，将选中内容转换为 Markdown 并复制到剪贴板。"
+    "message": "在飞书文档中按 Ctrl+C 复制 Markdown，支持飞书官方域名和企业专属自定义域名。"
   }
 }
