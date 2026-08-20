@@ -8,6 +8,7 @@
 - [x] 企业自定义域名按需授权
 - [x] 无远程代码
 - [x] 300×300 商店 Logo
+- [x] 440×280 Small promotional tile
 - [x] 1280×800 商店截图
 - [x] 250 字符以上中文详细描述
 - [x] 权限理由草稿
@@ -48,5 +49,6 @@ dist/feishu-to-markdown-0.4.0.zip
 
 ```text
 store-assets/logo-300.png
+store-assets/small-promotional-tile-440x280.png
 store-assets/screenshot-settings-1280x800.png
 ```

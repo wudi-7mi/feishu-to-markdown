@@ -25,6 +25,7 @@
 - Extension name：飞书 To Markdown
 - Detailed description：见 `listing-zh-CN.md`
 - Logo：`logo-300.png`
+- Small promotional tile：`small-promotional-tile-440x280.png`
 - Screenshot：`screenshot-settings-1280x800.png`
 - Search terms：飞书 Markdown；企业飞书；Lark Markdown；文档转换；复制 Markdown
 

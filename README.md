@@ -64,6 +64,7 @@
 - Partner Center 隐私声明与权限理由草稿；
 - 审核测试说明；
 - 300×300 商店 Logo；
+- 440×280 Small promotional tile；
 - 1280×800 设置页截图；
 - 提交前检查清单。
 
