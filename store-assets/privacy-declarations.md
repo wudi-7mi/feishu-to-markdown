@@ -23,4 +23,16 @@
 
 扩展会在本地临时处理用户主动复制的网页内容，但不收集、上传、出售或持久化保存该内容。插件开关和域名列表保存在 `chrome.storage.sync` 中。
 
+开发者没有接入服务器、数据统计或用户数据收集的计划。
+
+## Privacy Policy URL
+
+https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
+
+## Developer and Support
+
+- 开发者：wudi7mi
+- 项目：https://github.com/wudi-7mi/feishu-to-markdown
+- 支持邮箱：wudi7mi@gmail.com
+
 提交时应确保 Partner Center 的勾选项与公开的 `PRIVACY.md` 完全一致。

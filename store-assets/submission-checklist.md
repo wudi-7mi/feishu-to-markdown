@@ -18,16 +18,16 @@
 
 ## 提交者需要填写
 
-- [ ] Partner Center 开发者账号和公开的开发者/组织名称
-- [ ] 公开项目主页 URL
-- [ ] 公开支持邮箱或支持页面 URL
-- [ ] 隐私政策的公开 HTTPS URL
+- [x] Partner Center 公开开发者名称：wudi7mi
+- [x] 公开项目主页：https://github.com/wudi-7mi/feishu-to-markdown
+- [x] 公开支持邮箱：wudi7mi@gmail.com
+- [x] 隐私政策：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
 - [ ] 审核人员可访问的飞书/Lark 测试文档 URL
 - [ ] 如果测试文档需要登录，提供审核测试账号或改用公开只读文档
-- [ ] 上架范围：Public 或 Hidden
-- [ ] 上架市场范围
+- [x] 上架范围：Public
+- [x] 上架市场范围：中国
 - [ ] 商店分类，建议选择 Productivity/生产力
-- [ ] 数据使用声明最终确认
+- [x] 数据使用声明：无服务器、数据统计或用户数据收集计划
 - [ ] 商标和非官方声明最终确认
 
 ## 上传文件

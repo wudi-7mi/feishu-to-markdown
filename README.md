@@ -2,6 +2,10 @@
 
 飞书 To Markdown 是一个 Microsoft Edge 扩展。在飞书文档中选中内容并按下 `Ctrl+C`，扩展会读取飞书生成的富文本剪贴板，在浏览器本地转换为 Markdown，然后写回剪贴板。
 
+- 项目主页：https://github.com/wudi-7mi/feishu-to-markdown
+- 支持邮箱：wudi7mi@gmail.com
+- 隐私政策：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
+
 ## 功能
 
 - 使用 `Ctrl+C` 直接复制 Markdown，不需要打开中间转换页面。

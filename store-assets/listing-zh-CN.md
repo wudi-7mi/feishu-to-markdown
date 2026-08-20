@@ -12,5 +12,6 @@
 
 - 分类：生产力
 - 搜索词：飞书 Markdown, Lark Markdown, 文档转换, 富文本转换, 复制 Markdown
-- 网站：发布前填写项目主页 URL
-- 支持：发布前填写支持邮箱或支持页面 URL
+- 网站：https://github.com/wudi-7mi/feishu-to-markdown
+- 支持：wudi7mi@gmail.com
+- 隐私政策：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
