@@ -1,8 +1,6 @@
 # 飞书 To Markdown
 
-支持 Chromium 浏览器（Edge、Chrome）以及 Firefox。各浏览器的安装入口和发布包会分别提供，功能与设置保持一致。
-
-飞书 To Markdown 是一个 Microsoft Edge 扩展。在飞书文档中选中内容并按下 `Ctrl+C`，扩展会读取飞书生成的富文本剪贴板，在浏览器本地转换为 Markdown，然后写回剪贴板。
+飞书 To Markdown 是一个浏览器扩展。在飞书文档中选中内容并按下 `Ctrl+C`，扩展会读取飞书生成的富文本剪贴板，在浏览器本地转换为 Markdown，然后写回剪贴板。
 
 除飞书和 Lark 官方域名外，扩展也支持购买飞书服务并使用企业专属域名的文档系统。用户可以在设置页添加自己的企业域名，并通过 Edge 的按需授权机制，仅向该域名授予扩展访问权限。
 
@@ -32,14 +30,6 @@
 6. 选中内容并按 `Ctrl+C`。
 
 点击 Edge 工具栏中的扩展图标可以开启或关闭插件，并配置生效域名。域名输入会自动校验和防抖保存。新增企业自定义域名后，还需要点击「授权域名」并确认 Edge 的网站访问权限。
-
-## 默认域名
-
-- `feishu.cn`
-- `feishuapp.cn`
-- `larksuite.com`
-
-根域名会匹配自身及其子域名，例如 `feishu.cn` 会同时匹配 `example.feishu.cn`。
 
 ## 权限说明
 
@@ -78,7 +68,7 @@
 
 本扩展的 HTML 与 Markdown 转换逻辑基于 [blackblue1/feishu-markdown-converter](https://github.com/blackblue1/feishu-markdown-converter) 项目进行适配和扩展。感谢原作者 [blackblue1](https://github.com/blackblue1) 开源飞书文档与 Markdown 双向转换器，为本扩展提供了转换逻辑和实现基础。
 
-在原项目基础上，本项目增加了 Microsoft Edge 扩展形态、`Ctrl+C` 自动转换、企业专属自定义域名、按需网站授权、扩展设置和商店发布支持。原项目采用 MIT License，本项目继续依照 MIT License 发布。
+原项目采用 MIT License，本项目继续依照 MIT License 发布。
 
 ## 非官方声明
 
