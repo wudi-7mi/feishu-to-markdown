@@ -13,6 +13,12 @@ if (Test-Path -LiteralPath $firefoxManifestPath) {
   if ($dataCollectionPermissions.Count -ne 1 -or $dataCollectionPermissions[0] -ne "none") {
     throw 'Firefox data_collection_permissions.required must be ["none"]'
   }
+  if ([version]$firefoxManifest.browser_specific_settings.gecko.strict_min_version -lt [version]"140.0") {
+    throw "Firefox strict_min_version must be 140.0 or newer for data_collection_permissions"
+  }
+  if ([version]$firefoxManifest.browser_specific_settings.gecko_android.strict_min_version -lt [version]"142.0") {
+    throw "Firefox for Android strict_min_version must be 142.0 or newer for data_collection_permissions"
+  }
 }
 
 if ($manifest.manifest_version -ne 3) { throw "Manifest V3 is required" }

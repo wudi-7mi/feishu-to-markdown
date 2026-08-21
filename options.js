@@ -61,17 +61,40 @@ async function updatePermissionState() {
 }
 
 async function updateDomainStatus(domains = readDomains()) {
-  let hostname = "";
+  let pageUrl = null;
   try {
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    hostname = new URL(tab?.url || "").hostname.toLowerCase();
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const webTabs = tabs
+      .filter((tab) => /^https?:\/\//.test(tab.url || ""))
+      .sort((left, right) => {
+        if (left.active !== right.active) return left.active ? -1 : 1;
+        return (right.lastAccessed || 0) - (left.lastAccessed || 0);
+      });
+    if (webTabs[0]) pageUrl = new URL(webTabs[0].url);
   } catch (_) {
-    hostname = "";
+    pageUrl = null;
   }
-  const inRange = hostname && domains.some((domain) => matchesDomain(hostname, domain));
-  domainStatus.textContent = inRange ? "已生效" : "不在范围";
-  domainStatus.classList.toggle("in-range", Boolean(inRange));
-  domainStatus.classList.toggle("out-of-range", !inRange);
+
+  let state = "unknown";
+  let label = "无法判断";
+  if (pageUrl) {
+    const hostname = pageUrl.hostname.toLowerCase();
+    const configured = domains.some((domain) => matchesDomain(hostname, domain));
+    if (!configured) {
+      state = "out-of-range";
+      label = "不在范围";
+    } else {
+      const origin = pageUrl.protocol + "//" + hostname + "/*";
+      const authorized = await chrome.permissions.contains({ origins: [origin] });
+      state = authorized ? "in-range" : "out-of-range";
+      label = authorized ? "已生效" : "未授权";
+    }
+  }
+
+  domainStatus.textContent = label;
+  domainStatus.classList.toggle("in-range", state === "in-range");
+  domainStatus.classList.toggle("out-of-range", state === "out-of-range");
+  domainStatus.classList.toggle("unknown", state === "unknown");
 }
 
 function showMessage(text, error = false) {

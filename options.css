@@ -80,6 +80,7 @@ button.primary:disabled:hover { border-color: #e5e6eb; color: #a9aeb8; backgroun
 .domain-status { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; vertical-align: 2px; }
 .domain-status.in-range { color: #16815d; background: #e7f7f0; }
 .domain-status.out-of-range { color: #b42318; background: #fcebea; }
+.domain-status.unknown { color: #646a73; background: #f2f3f5; }
 
 .setting-row {
   position: relative;
