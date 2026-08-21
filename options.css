@@ -87,7 +87,7 @@ button.primary:hover { background: #245bdb; }
   border-bottom: 1px solid #e5e6eb;
 }
 .setting-row > div { min-width: 0; flex: 1; }
-.setting-row > div > label { margin: 0; }
+.setting-row > div > label { display: inline-block; margin: 0; }
 .setting-row > div { position: relative; }
 .status-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; color: #16815d; background: #e7f7f0; font-size: 11px; font-weight: 600; vertical-align: 1px; }
 .status-badge.off { color: #646a73; background: #f2f3f5; }

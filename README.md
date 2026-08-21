@@ -1,5 +1,7 @@
 # 飞书 To Markdown
 
+支持 Chromium 浏览器（Edge、Chrome）以及 Firefox。各浏览器的安装入口和发布包会分别提供，功能与设置保持一致。
+
 飞书 To Markdown 是一个 Microsoft Edge 扩展。在飞书文档中选中内容并按下 `Ctrl+C`，扩展会读取飞书生成的富文本剪贴板，在浏览器本地转换为 Markdown，然后写回剪贴板。
 
 除飞书和 Lark 官方域名外，扩展也支持购买飞书服务并使用企业专属域名的文档系统。用户可以在设置页添加自己的企业域名，并通过 Edge 的按需授权机制，仅向该域名授予扩展访问权限。
@@ -58,6 +60,16 @@
 .\scripts\validate.ps1
 .\scripts\package.ps1
 ```
+
+按浏览器生成发布包：
+
+```powershell
+.\scripts\package-browser.ps1 -Browser chrome
+.\scripts\package-browser.ps1 -Browser edge
+.\scripts\package-browser.ps1 -Browser firefox
+```
+
+生成文件位于 `dist`，命名格式为 `feishu-to-markdown-<browser>-<version>.zip`。Firefox 包使用独立的 Gecko Manifest 配置，Chrome 和 Edge 使用根目录 Manifest。
 
 先运行校验脚本检查 Manifest、JavaScript、资源和图标尺寸，再运行打包脚本生成上传包。生成的 ZIP 位于 `dist`，`manifest.json` 位于 ZIP 根目录。
 

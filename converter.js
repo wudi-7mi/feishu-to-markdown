@@ -28,17 +28,16 @@
     return style;
   }
 
-  function isBold(node) {
-    const weight = styleOf(node)["font-weight"] || "";
+  function isBold(style) {
+    const weight = style["font-weight"] || "";
     return weight === "bold" || weight === "bolder" || Number.parseInt(weight, 10) >= 600;
   }
 
-  function isItalic(node) {
-    return (styleOf(node)["font-style"] || "").includes("italic");
+  function isItalic(style) {
+    return (style["font-style"] || "").includes("italic");
   }
 
-  function isStrike(node) {
-    const style = styleOf(node);
+  function isStrike(style) {
     return (style["text-decoration"] || style["text-decoration-line"] || "").includes("line-through");
   }
 
@@ -79,15 +78,16 @@
     }
     if (tag === "code") return escapeCode(cleanInline(textContent(node)));
 
+    const style = styleOf(node);
     let content = Array.from(node.childNodes).map(renderInline).join("");
     if (tag === "a") {
       const href = node.getAttribute("href") || "";
       const label = cleanInline(content) || href;
       return href && label ? "[" + label + "](" + href + ")" : label;
     }
-    if (tag === "strong" || tag === "b" || isBold(node)) content = preserveSpace(content, "**");
-    if (tag === "em" || tag === "i" || isItalic(node)) content = preserveSpace(content, "*");
-    if (tag === "s" || tag === "strike" || tag === "del" || isStrike(node)) content = preserveSpace(content, "~~");
+    if (tag === "strong" || tag === "b" || isBold(style)) content = preserveSpace(content, "**");
+    if (tag === "em" || tag === "i" || isItalic(style)) content = preserveSpace(content, "*");
+    if (tag === "s" || tag === "strike" || tag === "del" || isStrike(style)) content = preserveSpace(content, "~~");
     return content;
   }
 

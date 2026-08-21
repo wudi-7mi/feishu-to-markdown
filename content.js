@@ -55,9 +55,18 @@
   }
 
   async function readClipboardMarkdown(fallbackSelection) {
+    // The selection is captured for this specific Ctrl+C action. Convert it
+    // first so ordinary copies do not wait for unrelated clipboard retries.
+    if (fallbackSelection?.text) {
+      const selectionMarkdown = globalThis.FeishuMarkdownConverter.fromHtml(fallbackSelection.html);
+      if (selectionMarkdown) return selectionMarkdown;
+      return fallbackSelection.text;
+    }
+
     const retryDelays = [0, 70, 160];
     let htmlCandidate = "";
     let plainTextCandidate = "";
+    let previousHtml = null;
     for (const delay of retryDelays) {
       if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
       try {
@@ -65,14 +74,17 @@
         for (const item of items) {
           if (item.types.includes("text/html")) {
             const html = await (await item.getType("text/html")).text();
-            const markdown = globalThis.FeishuMarkdownConverter.fromHtml(html);
-            if (markdown) {
-              htmlCandidate = markdown;
-              debugLog("rich clipboard candidate captured", {
-                htmlCharacters: html.length,
-                markdownCharacters: markdown.length,
-                attempt: retryDelays.indexOf(delay) + 1
-              });
+            if (html !== previousHtml) {
+              previousHtml = html;
+              const markdown = globalThis.FeishuMarkdownConverter.fromHtml(html);
+              if (markdown) {
+                htmlCandidate = markdown;
+                debugLog("rich clipboard candidate captured", {
+                  htmlCharacters: html.length,
+                  markdownCharacters: markdown.length,
+                  attempt: retryDelays.indexOf(delay) + 1
+                });
+              }
             }
           }
         }
@@ -88,20 +100,14 @@
         debugWarn("reading clipboard after Ctrl+C failed", { attempt: retryDelays.indexOf(delay) + 1, error });
       }
     }
-    // The selection was captured before the page's copy handler ran, so it is
-    // the only candidate we can associate with this Ctrl+C action confidently.
-    if (fallbackSelection?.text) {
-      const selectionMarkdown = globalThis.FeishuMarkdownConverter.fromHtml(fallbackSelection.html);
-      if (selectionMarkdown) return selectionMarkdown;
-      return fallbackSelection.text;
-    }
     return htmlCandidate || plainTextCandidate;
   }
 
   async function replaceCtrlCCopy(fallbackSelection) {
     try {
-      // Let the page's own copy handler populate rich clipboard formats before the first read.
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Only wait for the page's copy handler when there is no captured
+      // selection to convert locally.
+      if (!fallbackSelection?.text) await new Promise((resolve) => setTimeout(resolve, 50));
       const markdown = await readClipboardMarkdown(fallbackSelection);
       if (!markdown) {
         showToast("飞书复制尚未完成，请再按一次 Ctrl+C", "error");

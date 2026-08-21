@@ -33,18 +33,16 @@ function permissionPatterns(domain) {
 }
 
 function customPatterns(domains) {
-  return domains
+  return [...new Set(domains
     .map((domain) => normalizeDomain(domain).replace(/^\*\./, ""))
     .filter((domain) => domain && !DEFAULT_DOMAINS.includes(domain))
-    .flatMap(permissionPatterns);
+    .flatMap(permissionPatterns))];
 }
 
 async function missingPatterns(domains) {
-  const missing = [];
-  for (const pattern of customPatterns(domains)) {
-    if (!await chrome.permissions.contains({ origins: [pattern] })) missing.push(pattern);
-  }
-  return missing;
+  const patterns = customPatterns(domains);
+  const granted = await Promise.all(patterns.map((pattern) => chrome.permissions.contains({ origins: [pattern] })));
+  return patterns.filter((_, index) => !granted[index]);
 }
 
 async function updatePermissionState() {

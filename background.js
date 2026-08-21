@@ -23,10 +23,9 @@ async function syncCustomDomainScripts() {
     .map(normalizeDomain)
     .filter((domain) => domain && !DEFAULT_DOMAINS.has(domain))
     .flatMap(domainPatterns);
-  const matches = [];
-  for (const pattern of candidates) {
-    if (await chrome.permissions.contains({ origins: [pattern] })) matches.push(pattern);
-  }
+  const uniqueCandidates = [...new Set(candidates)];
+  const granted = await Promise.all(uniqueCandidates.map((pattern) => chrome.permissions.contains({ origins: [pattern] })));
+  const matches = uniqueCandidates.filter((_, index) => granted[index]);
 
   try {
     await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });

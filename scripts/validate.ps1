@@ -4,6 +4,13 @@ $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root "manifest.json"
 $manifest = Get-Content -Raw -Encoding UTF8 $manifestPath | ConvertFrom-Json
 
+$firefoxManifestPath = Join-Path $root "manifests\manifest.firefox.json"
+if (Test-Path -LiteralPath $firefoxManifestPath) {
+  $firefoxManifest = Get-Content -Raw -Encoding UTF8 $firefoxManifestPath | ConvertFrom-Json
+  if ($firefoxManifest.version -ne $manifest.version) { throw "Firefox manifest version does not match root manifest" }
+  if (!$firefoxManifest.browser_specific_settings.gecko.id) { throw "Firefox Gecko extension id is required" }
+}
+
 if ($manifest.manifest_version -ne 3) { throw "Manifest V3 is required" }
 if (!$manifest.name -or !$manifest.description) { throw "Manifest name and description are required" }
 
