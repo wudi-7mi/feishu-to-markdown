@@ -5,6 +5,8 @@ const message = document.getElementById("message");
 const permissionRow = document.getElementById("permission-row");
 const permissionText = document.getElementById("permission-text");
 const grantButton = document.getElementById("grant");
+const featureStatus = document.getElementById("feature-status");
+const version = document.getElementById("version");
 let saveTimer = null;
 
 function normalizeDomain(value) {
@@ -25,15 +27,16 @@ function validate(domains) {
   return invalid ? "无效域名：" + invalid : "";
 }
 
-function permissionPattern(domain) {
-  return "*://*." + normalizeDomain(domain).replace(/^\*\./, "") + "/*";
+function permissionPatterns(domain) {
+  const normalized = normalizeDomain(domain).replace(/^\*\./, "");
+  return ["*://" + normalized + "/*", "*://*." + normalized + "/*"];
 }
 
 function customPatterns(domains) {
   return domains
     .map((domain) => normalizeDomain(domain).replace(/^\*\./, ""))
     .filter((domain) => domain && !DEFAULT_DOMAINS.includes(domain))
-    .map(permissionPattern);
+    .flatMap(permissionPatterns);
 }
 
 async function missingPatterns(domains) {
@@ -86,7 +89,15 @@ async function load() {
   });
   domainsInput.value = domains.join("\n");
   replaceCopyInput.checked = replaceCtrlC;
+  version.textContent = "版本 " + chrome.runtime.getManifest().version;
+  updateFeatureStatus();
   await updatePermissionState();
+}
+
+function updateFeatureStatus() {
+  const enabled = replaceCopyInput.checked;
+  featureStatus.textContent = enabled ? "已开启" : "已关闭";
+  featureStatus.classList.toggle("off", !enabled);
 }
 
 domainsInput.addEventListener("input", () => {
@@ -103,6 +114,7 @@ domainsInput.addEventListener("blur", () => {
 });
 
 replaceCopyInput.addEventListener("change", async () => {
+  updateFeatureStatus();
   await chrome.storage.sync.set({ replaceCtrlC: replaceCopyInput.checked });
   showMessage(replaceCopyInput.checked ? "插件功能已开启" : "插件功能已关闭");
 });

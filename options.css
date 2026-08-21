@@ -36,6 +36,7 @@ h1, h2, p { margin: 0; }
 h1 { font-size: 20px; line-height: 1.35; }
 h2 { font-size: 16px; line-height: 1.4; }
 p { margin-top: 5px; color: #646a73; font-size: 13px; line-height: 1.6; }
+.version { display: inline-block; margin-top: 5px; color: #8f959e; font-size: 11px; }
 
 section { padding: 26px 28px 20px; }
 .section-head { display: flex; align-items: start; justify-content: space-between; gap: 24px; margin-bottom: 16px; }
@@ -87,6 +88,9 @@ button.primary:hover { background: #245bdb; }
 }
 .setting-row > div { min-width: 0; flex: 1; }
 .setting-row > div > label { margin: 0; }
+.setting-row > div { position: relative; }
+.status-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 10px; color: #16815d; background: #e7f7f0; font-size: 11px; font-weight: 600; vertical-align: 1px; }
+.status-badge.off { color: #646a73; background: #f2f3f5; }
 .domain-settings { padding-top: 22px; }
 .switch {
   appearance: none;

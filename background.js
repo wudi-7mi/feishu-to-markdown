@@ -12,8 +12,9 @@ function normalizeDomain(value) {
     .replace(/\.$/, "");
 }
 
-function domainPattern(domain) {
-  return "*://*." + normalizeDomain(domain) + "/*";
+function domainPatterns(domain) {
+  const normalized = normalizeDomain(domain);
+  return ["*://" + normalized + "/*", "*://*." + normalized + "/*"];
 }
 
 async function syncCustomDomainScripts() {
@@ -21,7 +22,7 @@ async function syncCustomDomainScripts() {
   const candidates = domains
     .map(normalizeDomain)
     .filter((domain) => domain && !DEFAULT_DOMAINS.has(domain))
-    .map(domainPattern);
+    .flatMap(domainPatterns);
   const matches = [];
   for (const pattern of candidates) {
     if (await chrome.permissions.contains({ origins: [pattern] })) matches.push(pattern);

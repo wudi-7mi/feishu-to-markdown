@@ -13,6 +13,7 @@
       <div>
         <h1>飞书 To Markdown</h1>
         <p>按 Ctrl+C 复制 Markdown，支持飞书官方域名和企业专属域名。</p>
+        <span class="version" id="version"></span>
       </div>
     </header>
 
@@ -20,6 +21,7 @@
       <div class="setting-row">
         <div>
           <label id="replace-copy-label" for="replace-copy">启用飞书 To Markdown</label>
+          <span class="status-badge" id="feature-status">检查中</span>
           <p>这是插件的总开关。开启后，在飞书文档页面按 Ctrl+C，会自动将选中的内容复制为 Markdown。</p>
         </div>
         <input class="switch" id="replace-copy" type="checkbox" role="switch" aria-labelledby="replace-copy-label">

@@ -55,8 +55,11 @@
 在 PowerShell 中运行：
 
 ```powershell
+.\scripts\validate.ps1
 .\scripts\package.ps1
 ```
+
+先运行校验脚本检查 Manifest、JavaScript、资源和图标尺寸，再运行打包脚本生成上传包。生成的 ZIP 位于 `dist`，`manifest.json` 位于 ZIP 根目录。
 
 ## 致谢与来源
 

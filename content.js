@@ -2,8 +2,18 @@
   "use strict";
   const LOG_PREFIX = "[Feishu MD][content]";
   const DEFAULT_DOMAINS = ["feishu.cn", "feishuapp.cn", "larksuite.com"];
+  const DEBUG = false;
   let shortcutEnabled = false;
   let listenerAttached = false;
+  let copyInFlight = false;
+
+  function debugLog(...args) {
+    if (DEBUG) console.info(LOG_PREFIX, ...args);
+  }
+
+  function debugWarn(...args) {
+    if (DEBUG) console.warn(LOG_PREFIX, ...args);
+  }
 
   function normalizeDomain(value) {
     return String(value || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^\*\./, "");
@@ -27,10 +37,10 @@
   async function writeClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
-      console.info(LOG_PREFIX, "clipboard write succeeded with navigator.clipboard", { characters: text.length });
+      debugLog("clipboard write succeeded with navigator.clipboard", { characters: text.length });
       return true;
     } catch (error) {
-      console.warn(LOG_PREFIX, "navigator.clipboard failed, trying execCommand", error);
+      debugWarn("navigator.clipboard failed, trying execCommand", error);
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.setAttribute("readonly", "");
@@ -39,56 +49,66 @@
       textarea.select();
       const copied = document.execCommand("copy");
       textarea.remove();
-      console.info(LOG_PREFIX, "execCommand copy result", { copied, characters: text.length });
+      debugLog("execCommand copy result", { copied, characters: text.length });
       return copied;
     }
   }
 
   async function readClipboardMarkdown(fallbackSelection) {
-    try {
-      const items = await navigator.clipboard.read();
-      for (const item of items) {
-        if (item.types.includes("text/html")) {
-          const html = await (await item.getType("text/html")).text();
-          const markdown = globalThis.FeishuMarkdownConverter.fromHtml(html);
-          if (markdown) {
-            console.info(LOG_PREFIX, "rich clipboard converted", {
-              htmlCharacters: html.length,
-              markdownCharacters: markdown.length
-            });
-            return markdown;
+    const retryDelays = [0, 70, 160];
+    for (const delay of retryDelays) {
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          if (item.types.includes("text/html")) {
+            const html = await (await item.getType("text/html")).text();
+            const markdown = globalThis.FeishuMarkdownConverter.fromHtml(html);
+            if (markdown) {
+              debugLog("rich clipboard converted", {
+                htmlCharacters: html.length,
+                markdownCharacters: markdown.length,
+                attempt: retryDelays.indexOf(delay) + 1
+              });
+              return markdown;
+            }
           }
         }
-      }
-      for (const item of items) {
-        if (item.types.includes("text/plain")) {
-          const text = (await (await item.getType("text/plain")).text()).trim();
-          if (text) return text;
+        for (const item of items) {
+          if (item.types.includes("text/plain")) {
+            const text = (await (await item.getType("text/plain")).text()).trim();
+            if (text) return text;
+          }
         }
+      } catch (error) {
+        debugWarn("reading clipboard after Ctrl+C failed", { attempt: retryDelays.indexOf(delay) + 1, error });
       }
-    } catch (error) {
-      console.warn(LOG_PREFIX, "reading clipboard after Ctrl+C failed", error);
     }
     if (!fallbackSelection?.text) return "";
     return globalThis.FeishuMarkdownConverter.fromHtml(fallbackSelection.html) || fallbackSelection.text;
   }
 
   async function replaceCtrlCCopy(fallbackSelection) {
-    // Give the page's own copy handler time to populate its rich clipboard formats.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const markdown = await readClipboardMarkdown(fallbackSelection);
-    if (!markdown) {
-      showToast("未读取到复制内容", "error");
-      return;
+    try {
+      // Let the page's own copy handler populate rich clipboard formats before the first read.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const markdown = await readClipboardMarkdown(fallbackSelection);
+      if (!markdown) {
+        showToast("飞书复制尚未完成，请再按一次 Ctrl+C", "error");
+        return;
+      }
+      const copied = await writeClipboard(markdown);
+      showToast(copied ? "已复制为 Markdown" : "复制为 Markdown 失败", copied ? "success" : "error");
+    } finally {
+      copyInFlight = false;
     }
-    const copied = await writeClipboard(markdown);
-    showToast(copied ? "已复制为 Markdown" : "复制为 Markdown 失败", copied ? "success" : "error");
   }
 
   function handleKeydown(event) {
     if (event.repeat || event.altKey || event.shiftKey || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "c") return;
-    if (!shortcutEnabled) return;
-    console.info(LOG_PREFIX, "Ctrl+C detected");
+    if (!shortcutEnabled || copyInFlight) return;
+    copyInFlight = true;
+    debugLog("Ctrl+C detected");
     const fallbackSelection = selectionHtml();
     replaceCtrlCCopy(fallbackSelection);
   }
@@ -104,7 +124,7 @@
     if (shortcutEnabled && !listenerAttached) {
       document.addEventListener("keydown", handleKeydown, true);
       listenerAttached = true;
-      console.info(LOG_PREFIX, "enabled on matching page", { hostname: location.hostname });
+      debugLog("enabled on matching page", { hostname: location.hostname });
     } else if (!shortcutEnabled && listenerAttached) {
       document.removeEventListener("keydown", handleKeydown, true);
       listenerAttached = false;
