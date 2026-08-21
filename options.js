@@ -63,14 +63,8 @@ async function updatePermissionState() {
 async function updateDomainStatus(domains = readDomains()) {
   let pageUrl = null;
   try {
-    const tabs = await chrome.tabs.query({ currentWindow: true });
-    const webTabs = tabs
-      .filter((tab) => /^https?:\/\//.test(tab.url || ""))
-      .sort((left, right) => {
-        if (left.active !== right.active) return left.active ? -1 : 1;
-        return (right.lastAccessed || 0) - (left.lastAccessed || 0);
-      });
-    if (webTabs[0]) pageUrl = new URL(webTabs[0].url);
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (/^https?:\/\//.test(activeTab?.url || "")) pageUrl = new URL(activeTab.url);
   } catch (_) {
     pageUrl = null;
   }
