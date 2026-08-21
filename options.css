@@ -40,6 +40,7 @@ p { margin-top: 5px; color: #646a73; font-size: 13px; line-height: 1.6; }
 
 section { padding: 26px 28px 20px; }
 .section-head { display: flex; align-items: start; justify-content: space-between; gap: 24px; margin-bottom: 16px; }
+.section-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex: 0 0 auto; }
 label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
 code { padding: 1px 4px; border-radius: 4px; background: #f2f3f5; color: #3c4250; }
 
@@ -71,11 +72,14 @@ button.secondary { color: #3c4250; background: #fff; white-space: nowrap; }
 button.secondary:hover { background: #f5f6f7; }
 button.primary { border-color: #3370ff; color: #fff; background: #3370ff; white-space: nowrap; }
 button.primary:hover { background: #245bdb; }
+button:disabled { border-color: #e5e6eb; color: #a9aeb8; background: #f2f3f5; cursor: not-allowed; }
+button.primary:disabled:hover { border-color: #e5e6eb; color: #a9aeb8; background: #f2f3f5; }
 
 .message { min-height: 20px; margin-top: 8px; color: #16815d; font-size: 13px; }
 .message.error { color: #b42318; }
-.permission-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; padding: 10px 12px; border: 1px solid #bacefd; border-radius: 6px; background: #f0f4ff; color: #3156a3; font-size: 13px; }
-.hidden { display: none; }
+.domain-status { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; vertical-align: 2px; }
+.domain-status.in-range { color: #16815d; background: #e7f7f0; }
+.domain-status.out-of-range { color: #b42318; background: #fcebea; }
 
 .setting-row {
   position: relative;

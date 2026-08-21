@@ -26,7 +26,23 @@ try {
   $manifestJson = $manifest | ConvertTo-Json -Depth 20
   [System.IO.File]::WriteAllText((Join-Path $stagingDirectory "manifest.json"), $manifestJson, [System.Text.UTF8Encoding]::new($false))
   if (Test-Path -LiteralPath $packagePath) { Remove-Item -LiteralPath $packagePath }
-  Compress-Archive -Path (Join-Path $stagingDirectory "*") -DestinationPath $packagePath -CompressionLevel Optimal
+
+  Add-Type -AssemblyName System.IO.Compression
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $archive = [System.IO.Compression.ZipFile]::Open($packagePath, [System.IO.Compression.ZipArchiveMode]::Create)
+  try {
+    foreach ($file in Get-ChildItem -LiteralPath $stagingDirectory -File -Recurse) {
+      $entryName = $file.FullName.Substring($stagingDirectory.Length + 1).Replace("\", "/")
+      [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $archive,
+        $file.FullName,
+        $entryName,
+        [System.IO.Compression.CompressionLevel]::Optimal
+      ) | Out-Null
+    }
+  } finally {
+    $archive.Dispose()
+  }
   Write-Output $packagePath
 } finally {
   if (Test-Path -LiteralPath $stagingDirectory) { Remove-Item -LiteralPath $stagingDirectory -Recurse -Force }

@@ -30,18 +30,17 @@
       <div class="domain-settings">
       <div class="section-head">
         <div>
-          <h2 id="domains-title">生效域名</h2>
-          <p>默认支持飞书官方域名。购买飞书服务并使用专属域名的企业，也可以在这里添加并授权。每行一个域名。</p>
+          <h2 id="domains-title">生效域名 <span class="domain-status out-of-range" id="domain-status">不在范围</span></h2>
+          <p>使用专属域名的企业，也可以在这里添加并授权。每行一个域名。</p>
         </div>
-        <button class="secondary" id="reset" type="button">恢复默认</button>
+        <div class="section-actions">
+          <button class="secondary" id="reset" type="button">恢复默认</button>
+          <button class="primary" id="grant" type="button" disabled>授权新域名</button>
+        </div>
       </div>
       <label for="domains">域名列表</label>
       <textarea id="domains" rows="6" spellcheck="false" placeholder="feishu.cn&#10;larksuite.com"></textarea>
       <div class="message" id="message" role="status" aria-live="polite"></div>
-      <div class="permission-row hidden" id="permission-row">
-        <span id="permission-text">自定义域名需要网站访问权限。</span>
-        <button class="primary" id="grant" type="button">授权域名</button>
-      </div>
       </div>
     </section>
   </main>

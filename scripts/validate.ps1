@@ -9,6 +9,10 @@ if (Test-Path -LiteralPath $firefoxManifestPath) {
   $firefoxManifest = Get-Content -Raw -Encoding UTF8 $firefoxManifestPath | ConvertFrom-Json
   if ($firefoxManifest.version -ne $manifest.version) { throw "Firefox manifest version does not match root manifest" }
   if (!$firefoxManifest.browser_specific_settings.gecko.id) { throw "Firefox Gecko extension id is required" }
+  $dataCollectionPermissions = @($firefoxManifest.browser_specific_settings.gecko.data_collection_permissions.required)
+  if ($dataCollectionPermissions.Count -ne 1 -or $dataCollectionPermissions[0] -ne "none") {
+    throw 'Firefox data_collection_permissions.required must be ["none"]'
+  }
 }
 
 if ($manifest.manifest_version -ne 3) { throw "Manifest V3 is required" }

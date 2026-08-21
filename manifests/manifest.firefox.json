@@ -9,7 +9,8 @@
     "storage",
     "scripting",
     "clipboardRead",
-    "clipboardWrite"
+    "clipboardWrite",
+    "activeTab"
   ],
   "host_permissions": [
     "https://*.feishu.cn/*",
@@ -51,7 +52,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "feishu-to-markdown@wudi7mi.github.io",
-      "strict_min_version": "128.0"
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   }
 }

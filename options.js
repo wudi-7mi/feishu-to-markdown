@@ -2,11 +2,10 @@ const DEFAULT_DOMAINS = ["feishu.cn", "feishuapp.cn", "larksuite.com"];
 const domainsInput = document.getElementById("domains");
 const replaceCopyInput = document.getElementById("replace-copy");
 const message = document.getElementById("message");
-const permissionRow = document.getElementById("permission-row");
-const permissionText = document.getElementById("permission-text");
 const grantButton = document.getElementById("grant");
 const featureStatus = document.getElementById("feature-status");
 const version = document.getElementById("version");
+const domainStatus = document.getElementById("domain-status");
 let saveTimer = null;
 
 function normalizeDomain(value) {
@@ -25,6 +24,11 @@ function readDomains() {
 function validate(domains) {
   const invalid = domains.find((domain) => !/^(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(domain));
   return invalid ? "无效域名：" + invalid : "";
+}
+
+function matchesDomain(hostname, domain) {
+  const normalized = normalizeDomain(domain).replace(/^\*\./, "");
+  return Boolean(normalized) && (hostname === normalized || hostname.endsWith("." + normalized));
 }
 
 function permissionPatterns(domain) {
@@ -47,16 +51,27 @@ async function missingPatterns(domains) {
 
 async function updatePermissionState() {
   const domains = readDomains();
-  if (validate(domains)) {
-    permissionRow.classList.add("hidden");
+  const invalid = validate(domains);
+  if (invalid) {
+    grantButton.disabled = true;
     return;
   }
   const missing = await missingPatterns(domains);
-  permissionRow.classList.toggle("hidden", missing.length === 0);
-  permissionText.textContent = missing.length === 1
-    ? "新增的自定义域名需要授权后才能生效。"
-    : missing.length + " 个自定义域名需要授权后才能生效。";
-  grantButton.textContent = missing.length > 1 ? "授权这些域名" : "授权域名";
+  grantButton.disabled = missing.length === 0;
+}
+
+async function updateDomainStatus(domains = readDomains()) {
+  let hostname = "";
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    hostname = new URL(tab?.url || "").hostname.toLowerCase();
+  } catch (_) {
+    hostname = "";
+  }
+  const inRange = hostname && domains.some((domain) => matchesDomain(hostname, domain));
+  domainStatus.textContent = inRange ? "已生效" : "不在范围";
+  domainStatus.classList.toggle("in-range", Boolean(inRange));
+  domainStatus.classList.toggle("out-of-range", !inRange);
 }
 
 function showMessage(text, error = false) {
@@ -78,6 +93,7 @@ async function saveDomains() {
   await chrome.storage.sync.set({ domains });
   showMessage(domains.length ? "已自动保存" : "已自动保存，所有域名均已关闭");
   await updatePermissionState();
+  await updateDomainStatus(domains);
 }
 
 async function load() {
@@ -90,6 +106,7 @@ async function load() {
   version.textContent = "版本 " + chrome.runtime.getManifest().version;
   updateFeatureStatus();
   await updatePermissionState();
+  await updateDomainStatus(domains);
 }
 
 function updateFeatureStatus() {
@@ -125,6 +142,7 @@ grantButton.addEventListener("click", async () => {
     const granted = await chrome.permissions.request({ origins });
     showMessage(granted ? "域名权限已授予" : "未授予域名权限", !granted);
     await updatePermissionState();
+    await updateDomainStatus();
   } catch (error) {
     showMessage("授权失败：" + error.message, true);
   }
@@ -142,6 +160,8 @@ document.getElementById("reset").addEventListener("click", async () => {
   await chrome.storage.sync.set({ domains: DEFAULT_DOMAINS, replaceCtrlC: true });
   showMessage("已恢复并保存默认设置");
   await updatePermissionState();
+  await updateDomainStatus(DEFAULT_DOMAINS);
 });
 
 load();
+chrome.tabs.onActivated.addListener(() => updateDomainStatus());
