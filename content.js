@@ -56,6 +56,7 @@
 
   async function readClipboardMarkdown(fallbackSelection) {
     const retryDelays = [0, 70, 160];
+    let plainTextCandidate = "";
     for (const delay of retryDelays) {
       if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
       try {
@@ -77,15 +78,17 @@
         for (const item of items) {
           if (item.types.includes("text/plain")) {
             const text = (await (await item.getType("text/plain")).text()).trim();
-            if (text) return text;
+            if (text && !plainTextCandidate) plainTextCandidate = text;
           }
         }
       } catch (error) {
         debugWarn("reading clipboard after Ctrl+C failed", { attempt: retryDelays.indexOf(delay) + 1, error });
       }
     }
-    if (!fallbackSelection?.text) return "";
-    return globalThis.FeishuMarkdownConverter.fromHtml(fallbackSelection.html) || fallbackSelection.text;
+    if (fallbackSelection?.text) {
+      return globalThis.FeishuMarkdownConverter.fromHtml(fallbackSelection.html) || fallbackSelection.text;
+    }
+    return plainTextCandidate;
   }
 
   async function replaceCtrlCCopy(fallbackSelection) {

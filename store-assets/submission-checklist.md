@@ -42,7 +42,7 @@
 上传生成的：
 
 ```text
-dist/feishu-to-markdown-0.4.0.zip
+dist/feishu-to-markdown-0.4.2.zip
 ```
 
 商店详情页另行上传：
@@ -50,5 +50,5 @@ dist/feishu-to-markdown-0.4.0.zip
 ```text
 store-assets/logo-300.png
 store-assets/small-promotional-tile-440x280.png
-store-assets/screenshot-settings-1280x800.png
+store-assets/sc1280x800.png
 ```
