@@ -42,7 +42,7 @@
 上传生成的：
 
 ```text
-dist/feishu-to-markdown-0.4.4.zip
+dist/feishu-to-markdown-0.5.0.zip
 ```
 
 商店详情页另行上传：

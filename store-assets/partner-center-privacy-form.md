@@ -1,6 +1,6 @@
 # Partner Center Privacy 表单填写稿
 
-以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.4.4` 版本代码和公开隐私政策一致。
+以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.5.0` 版本代码和公开隐私政策一致。
 
 ## Single purpose description
 

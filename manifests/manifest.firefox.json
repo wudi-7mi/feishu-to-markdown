@@ -20,7 +20,7 @@
     "*://*/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {
@@ -34,7 +34,10 @@
       "all_frames": true
     }
   ],
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_title": "__MSG_extensionName__",
     "default_popup": "options.html"
@@ -44,5 +47,11 @@
     "32": "icon32.png",
     "48": "icon48.png",
     "128": "icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "feishu-to-markdown@wudi7mi.github.io",
+      "strict_min_version": "128.0"
+    }
   }
 }
