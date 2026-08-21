@@ -4,9 +4,13 @@
 
 除飞书和 Lark 官方域名外，扩展也支持购买飞书服务并使用企业专属域名的文档系统。用户可以在设置页添加自己的企业域名，并通过 Edge 的按需授权机制，仅向该域名授予扩展访问权限。
 
-- 项目主页：https://github.com/wudi-7mi/feishu-to-markdown
-- 支持邮箱：wudi7mi@gmail.com
-- 隐私政策：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
+## 从 Edge 商店安装
+
+扩展已上架 Microsoft Edge Add-ons：
+
+**[在 Microsoft Edge 中获取「飞书 To Markdown」](https://microsoftedge.microsoft.com/addons/detail/%E9%A3%9E%E4%B9%A6-to-markdown/jpholmfajdccoondgolpcgmckmehoaef)**
+
+安装后刷新已经打开的飞书文档页面，选中内容并按 `Ctrl+C`，即可将内容复制为 Markdown。点击 Edge 工具栏中的扩展图标，可以开启或关闭功能，并为使用飞书服务的企业配置专属文档域名。
 
 ## 功能
 
@@ -16,7 +20,7 @@
 - 支持购买飞书服务企业使用的专属自定义域名，并采用按需授权，不申请全站必选访问权限。
 - 所有转换均在浏览器本地完成，不上传或保存文档内容。
 
-## 本地安装
+## 开发者模式安装
 
 1. 在 Edge 地址栏打开 `edge://extensions/`。
 2. 打开「开发人员模式」。
@@ -54,21 +58,11 @@
 .\scripts\package.ps1
 ```
 
-脚本会读取 `manifest.json` 的版本号，并在 `dist` 中生成可上传到 Partner Center 的 ZIP。`manifest.json` 位于 ZIP 根目录，开发文件和商店素材不会包含在扩展包中。
+## 致谢与来源
 
-## 商店发布材料
+本扩展的 HTML 与 Markdown 转换逻辑基于 [blackblue1/feishu-markdown-converter](https://github.com/blackblue1/feishu-markdown-converter) 项目进行适配和扩展。感谢原作者 [blackblue1](https://github.com/blackblue1) 开源飞书文档与 Markdown 双向转换器，为本扩展提供了转换逻辑和实现基础。
 
-`store-assets` 目录包含：
-
-- 中文商店详细描述；
-- Partner Center 隐私声明与权限理由草稿；
-- 审核测试说明；
-- 300×300 商店 Logo；
-- 440×280 Small promotional tile；
-- 1280×800 设置页截图；
-- 提交前检查清单。
-
-发布流程参考 [Microsoft Edge 官方文档](https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension)。
+在原项目基础上，本项目增加了 Microsoft Edge 扩展形态、`Ctrl+C` 自动转换、企业专属自定义域名、按需网站授权、扩展设置和商店发布支持。原项目采用 MIT License，本项目继续依照 MIT License 发布。
 
 ## 非官方声明
 
