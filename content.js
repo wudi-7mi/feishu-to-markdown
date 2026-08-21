@@ -79,7 +79,9 @@
         for (const item of items) {
           if (item.types.includes("text/plain")) {
             const text = (await (await item.getType("text/plain")).text()).trim();
-            if (text && !plainTextCandidate) plainTextCandidate = text;
+            // Keep the latest valid value: an earlier read may still be the
+            // clipboard contents from before the current Ctrl+C action.
+            if (text) plainTextCandidate = text;
           }
         }
       } catch (error) {
