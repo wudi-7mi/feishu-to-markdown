@@ -12,7 +12,7 @@
       <img class="logo" src="icon.svg" alt="飞书 To Markdown">
       <div>
         <h1>飞书 To Markdown</h1>
-        <p>按 Ctrl+C 复制 Markdown，支持飞书官方域名和企业专属域名。</p>
+        <p>飞书与 Markdown 双向转换，支持官方域名和企业专属域名。</p>
         <span class="version" id="version"></span>
       </div>
     </header>
@@ -25,6 +25,23 @@
           <p>这是插件的总开关。开启后，在飞书文档页面按 Ctrl+C，会自动将选中的内容复制为 Markdown。</p>
         </div>
         <input class="switch" id="replace-copy" type="checkbox" role="switch" aria-labelledby="replace-copy-label">
+      </div>
+
+      <div class="setting-row markdown-paste-setting">
+        <div>
+          <label id="markdown-paste-label" for="markdown-paste">Markdown 粘贴转飞书格式</label>
+          <p>开启后，在飞书编辑区粘贴纯文本 Markdown 时，自动转换标题、列表、表格等格式。普通文本和已有富文本不受影响。</p>
+        </div>
+        <input class="switch" id="markdown-paste" type="checkbox" role="switch" aria-labelledby="markdown-paste-label">
+      </div>
+
+      <div class="clipboard-tool">
+        <div>
+          <h2>转换当前剪贴板</h2>
+          <p>将剪贴板里的 Markdown 写成飞书可识别的富文本，然后回到文档按 Ctrl+V。</p>
+        </div>
+        <button class="primary" id="convert-clipboard" type="button">转换剪贴板</button>
+        <div class="message clipboard-message" id="clipboard-message" role="status" aria-live="polite"></div>
       </div>
 
       <div class="domain-settings">
@@ -44,6 +61,7 @@
       </div>
     </section>
   </main>
+  <script src="converter.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

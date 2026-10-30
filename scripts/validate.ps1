@@ -31,6 +31,9 @@ foreach ($file in @("background.js", "content.js", "converter.js", "options.js")
   if ($LASTEXITCODE -ne 0) { throw "JavaScript syntax check failed: $file" }
 }
 
+node (Join-Path $root "scripts\test-converter.js")
+if ($LASTEXITCODE -ne 0) { throw "Converter tests failed" }
+
 foreach ($file in @("options.html", "options.css", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales\zh_CN\messages.json")) {
   if (!(Test-Path -LiteralPath (Join-Path $root $file))) { throw "Missing referenced asset: $file" }
 }

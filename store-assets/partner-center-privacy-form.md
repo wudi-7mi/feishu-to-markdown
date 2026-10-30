@@ -1,11 +1,11 @@
 # Partner Center Privacy 表单填写稿
 
-以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.5.1` 版本代码和公开隐私政策一致。
+以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.6.1` 版本代码和公开隐私政策一致。
 
 ## Single purpose description
 
 ```text
-Feishu To Markdown converts rich-text content selected in Feishu or Lark documents into Markdown when the user presses Ctrl+C, and then writes the Markdown back to the clipboard. It supports official Feishu/Lark domains and enterprise custom domains that the user explicitly adds and authorizes. All document conversion is performed locally in the browser.
+Feishu To Markdown locally converts rich-text content copied from Feishu or Lark documents into Markdown, and converts Markdown pasted by the user into rich-text HTML that Feishu can edit. Results are written only to the clipboard or the active Feishu editor in response to an explicit copy, paste, or Convert Clipboard action. It supports official Feishu/Lark domains and enterprise custom domains that the user explicitly adds and authorizes.
 ```
 
 ## Permission justification
@@ -13,7 +13,7 @@ Feishu To Markdown converts rich-text content selected in Feishu or Lark documen
 ### storage justification
 
 ```text
-The storage permission is used only to save the extension's enabled/disabled setting and the list of domains configured by the user through chrome.storage.sync. The extension does not store document or clipboard content. Microsoft Edge may sync these settings through the user's own Microsoft account, but the extension developer does not receive them.
+The storage permission is used only to save the copy-conversion setting, Markdown paste-conversion setting, and the list of domains configured by the user through chrome.storage.sync. The extension does not store document or clipboard content. Microsoft Edge may sync these settings through the user's own Microsoft account, but the extension developer does not receive them.
 ```
 
 ### scripting justification
@@ -25,19 +25,19 @@ The scripting permission is used to dynamically register the extension's bundled
 ### clipboardRead justification
 
 ```text
-The clipboardRead permission is used only after the user presses Ctrl+C on an enabled and authorized Feishu/Lark document domain. It reads the HTML or plain text that the page placed on the clipboard for that specific copy action so it can be converted locally to Markdown. The extension does not continuously monitor, upload, transmit, or persist clipboard content.
+The clipboardRead permission is used only after the user copies or pastes on an enabled and authorized Feishu/Lark document domain, or clicks Convert Clipboard in the extension popup. It reads HTML or plain text for that specific user action so it can be converted locally between Feishu rich text and Markdown. The extension does not continuously monitor, upload, transmit, or persist clipboard content.
 ```
 
 ### clipboardWrite justification
 
 ```text
-The clipboardWrite permission is used to replace the result of the user's Ctrl+C action with the locally converted Markdown text. Clipboard content is written only in direct response to the user's copy action on an enabled and authorized domain, and is not sent to any server or retained by the extension.
+The clipboardWrite permission is used to write locally converted Markdown together with the original Feishu/Lark HTML, or to write rich-text HTML generated from Markdown after the user clicks Convert Clipboard. Clipboard content is written only in direct response to an explicit user action and is not sent to any server or retained by the extension.
 ```
 
 ### Host permission justification
 
 ```text
-Required host permissions are limited to official Feishu and Lark domains. On these domains, the bundled content script listens for a user-initiated Ctrl+C action and performs the Markdown conversion locally. The optional *://*/* declaration does not grant default access to all websites; it only allows Edge to show a permission prompt for an exact enterprise custom domain entered by the user. A dynamic content script is registered only after the user explicitly grants that domain. No other websites are accessed.
+Required host permissions are limited to official Feishu and Lark domains. On these domains, the bundled content script listens for user-initiated copy and paste actions and performs the conversion locally. The optional *://*/* declaration does not grant default access to all websites; it only allows Edge to show a permission prompt for an exact enterprise custom domain entered by the user. A dynamic content script is registered only after the user explicitly grants that domain. No other websites are accessed.
 ```
 
 ## Are you using remote code?

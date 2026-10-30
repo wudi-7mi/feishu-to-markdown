@@ -25,20 +25,28 @@ async function syncCustomDomainScripts() {
     .flatMap(domainPatterns);
   const uniqueCandidates = [...new Set(candidates)];
   const granted = await Promise.all(uniqueCandidates.map((pattern) => chrome.permissions.contains({ origins: [pattern] })));
-  const matches = uniqueCandidates.filter((_, index) => granted[index]);
+  const matches = uniqueCandidates.filter((_, index) => granted[index]).sort();
+  const [existing] = await chrome.scripting.getRegisteredContentScripts({ ids: [SCRIPT_ID] });
 
-  try {
-    await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
-  } catch (_) {
-    // The registration does not exist on first install.
+  if (!matches.length) {
+    if (existing) await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
+    return;
   }
 
-  if (!matches.length) return;
+  const existingMatches = [...(existing?.matches || [])].sort();
+  const registrationUnchanged = existing
+    && JSON.stringify(existingMatches) === JSON.stringify(matches)
+    && JSON.stringify(existing.js || []) === JSON.stringify(["converter.js", "content.js"])
+    && existing.runAt === "document_idle"
+    && existing.allFrames === true;
+  if (registrationUnchanged) return;
+
+  if (existing) await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
   await chrome.scripting.registerContentScripts([{
     id: SCRIPT_ID,
     matches: [...new Set(matches)],
     js: ["converter.js", "content.js"],
-    runAt: "document_start",
+    runAt: "document_idle",
     allFrames: true,
     persistAcrossSessions: true
   }]);
@@ -58,5 +66,3 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 chrome.permissions.onAdded.addListener(scheduleSync);
 chrome.permissions.onRemoved.addListener(scheduleSync);
-
-scheduleSync();

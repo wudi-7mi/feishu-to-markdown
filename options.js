@@ -1,7 +1,10 @@
 const DEFAULT_DOMAINS = ["feishu.cn", "feishuapp.cn", "larksuite.com"];
 const domainsInput = document.getElementById("domains");
 const replaceCopyInput = document.getElementById("replace-copy");
+const markdownPasteInput = document.getElementById("markdown-paste");
 const message = document.getElementById("message");
+const clipboardMessage = document.getElementById("clipboard-message");
+const convertClipboardButton = document.getElementById("convert-clipboard");
 const grantButton = document.getElementById("grant");
 const featureStatus = document.getElementById("feature-status");
 const version = document.getElementById("version");
@@ -114,16 +117,20 @@ async function saveDomains() {
 }
 
 async function load() {
-  const { domains = DEFAULT_DOMAINS, replaceCtrlC = true } = await chrome.storage.sync.get({
+  version.textContent = "版本 " + chrome.runtime.getManifest().version;
+  const { domains = DEFAULT_DOMAINS, replaceCtrlC = true, convertMarkdownPaste = true } = await chrome.storage.sync.get({
     domains: DEFAULT_DOMAINS,
-    replaceCtrlC: true
+    replaceCtrlC: true,
+    convertMarkdownPaste: true
   });
   domainsInput.value = domains.join("\n");
   replaceCopyInput.checked = replaceCtrlC;
-  version.textContent = "版本 " + chrome.runtime.getManifest().version;
+  markdownPasteInput.checked = convertMarkdownPaste;
   updateFeatureStatus();
-  await updatePermissionState();
-  await updateDomainStatus(domains);
+  await Promise.all([
+    updatePermissionState(),
+    updateDomainStatus(domains)
+  ]);
 }
 
 function updateFeatureStatus() {
@@ -151,6 +158,50 @@ replaceCopyInput.addEventListener("change", async () => {
   showMessage(replaceCopyInput.checked ? "插件功能已开启" : "插件功能已关闭");
 });
 
+markdownPasteInput.addEventListener("change", async () => {
+  await chrome.storage.sync.set({ convertMarkdownPaste: markdownPasteInput.checked });
+  showMessage(markdownPasteInput.checked ? "Markdown 粘贴转换已开启" : "Markdown 粘贴转换已关闭");
+});
+
+async function writeRichClipboard(markdown, html) {
+  if (globalThis.ClipboardItem && navigator.clipboard.write) {
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/plain": new Blob([markdown], { type: "text/plain" }),
+      "text/html": new Blob([html], { type: "text/html" })
+    })]);
+    return true;
+  }
+  const preview = document.createElement("div");
+  preview.contentEditable = "true";
+  preview.innerHTML = html;
+  Object.assign(preview.style, { position: "fixed", left: "-9999px", top: "0" });
+  document.body.appendChild(preview);
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(preview);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const copied = document.execCommand("copy");
+  selection.removeAllRanges();
+  preview.remove();
+  return copied;
+}
+
+convertClipboardButton.addEventListener("click", async () => {
+  clipboardMessage.classList.remove("error");
+  try {
+    const markdown = await navigator.clipboard.readText();
+    if (!markdown.trim()) throw new Error("剪贴板中没有文本");
+    const html = globalThis.FeishuMarkdownConverter.toHtml(markdown);
+    if (!html) throw new Error("没有可转换的 Markdown 内容");
+    if (!await writeRichClipboard(markdown, html)) throw new Error("浏览器拒绝写入剪贴板");
+    clipboardMessage.textContent = "已转换，可回到飞书文档直接粘贴";
+  } catch (error) {
+    clipboardMessage.textContent = error.message || "转换剪贴板失败";
+    clipboardMessage.classList.add("error");
+  }
+});
+
 grantButton.addEventListener("click", async () => {
   const domains = readDomains();
   const origins = await missingPatterns(domains);
@@ -174,7 +225,8 @@ document.getElementById("reset").addEventListener("click", async () => {
   domainsInput.classList.remove("invalid");
   domainsInput.setAttribute("aria-invalid", "false");
   replaceCopyInput.checked = true;
-  await chrome.storage.sync.set({ domains: DEFAULT_DOMAINS, replaceCtrlC: true });
+  markdownPasteInput.checked = true;
+  await chrome.storage.sync.set({ domains: DEFAULT_DOMAINS, replaceCtrlC: true, convertMarkdownPaste: true });
   showMessage("已恢复并保存默认设置");
   await updatePermissionState();
   await updateDomainStatus(DEFAULT_DOMAINS);

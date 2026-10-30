@@ -2,15 +2,15 @@
 
 ## Single Purpose Description
 
-在用户主动按下 Ctrl+C 时，将飞书文档选中的富文本内容在浏览器本地转换为 Markdown，并写回剪贴板。
+在用户主动复制或粘贴时，在浏览器本地完成飞书富文本与 Markdown 的双向转换，并将结果写回剪贴板或当前飞书编辑器。
 
 ## Permission Justification
 
-- `storage`：保存用户设置的插件开关和生效域名列表。
-- `clipboardRead`：仅在用户主动按下 Ctrl+C 后，读取飞书为该次复制操作生成的 HTML 或纯文本，以便转换为 Markdown。
-- `clipboardWrite`：将本地转换完成的 Markdown 写回用户剪贴板。
+- `storage`：保存用户设置的复制开关、Markdown 粘贴转换开关和生效域名列表。
+- `clipboardRead`：仅在用户主动复制、粘贴或点击“转换剪贴板”后读取 HTML 或纯文本，以便在本地转换。
+- `clipboardWrite`：将本地转换完成的 Markdown 与原始富文本一同写回剪贴板，或将 Markdown 转换后的 HTML 写回剪贴板。
 - `scripting`：在用户为企业自定义域名授予网站访问权限后，动态注册扩展内置的内容脚本。
-- `https://*.feishu.cn/*`、`https://*.feishuapp.cn/*`、`https://*.larksuite.com/*`：在飞书和 Lark 文档页面监听用户主动发起的 Ctrl+C，并执行本地格式转换。
+- `https://*.feishu.cn/*`、`https://*.feishuapp.cn/*`、`https://*.larksuite.com/*`：在飞书和 Lark 文档页面监听用户主动发起的复制与粘贴，并执行本地格式转换。
 - 可选网站访问权限：只在用户通过设置页主动添加并授权企业自定义域名时申请，用于在该域名运行相同的本地转换功能。
 
 ## Remote Code
