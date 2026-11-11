@@ -95,24 +95,45 @@
     return Array.from(node.children || []).some((child) => blockTags.has(child.tagName.toLowerCase()) && child.tagName.toLowerCase() !== "br");
   }
 
-  function renderList(node, indent) {
+  function renderList(node) {
     const ordered = node.tagName.toLowerCase() === "ol";
     let index = Number(node.getAttribute("start") || "1");
     if (!Number.isFinite(index)) index = 1;
-    const lines = [];
-    Array.from(node.children).forEach((item) => {
-      if (item.tagName.toLowerCase() !== "li") return;
+    const chunks = [];
+    Array.from(node.childNodes).forEach((item) => {
+      // Feishu also puts paragraphs, code and tables directly inside nested
+      // lists. Preserve those blocks even when the clipboard HTML has no li.
+      if (item.nodeType !== Node.ELEMENT_NODE || item.tagName.toLowerCase() !== "li") {
+        const value = renderBlock(item);
+        if (value) chunks.push({ value, listItem: false });
+        return;
+      }
       const marker = ordered ? index++ + "." : "-";
-      const nested = [];
+      const blocks = [];
       const inline = [];
+      const flushInline = () => {
+        const value = cleanInline(inline.join(""));
+        if (value) blocks.push(value);
+        inline.length = 0;
+      };
       Array.from(item.childNodes).forEach((child) => {
-        if (child.nodeType === Node.ELEMENT_NODE && ["ul", "ol"].includes(child.tagName.toLowerCase())) nested.push(renderList(child, indent + 1));
-        else inline.push(renderInline(child));
+        if (child.nodeType === Node.ELEMENT_NODE && blockTags.has(child.tagName.toLowerCase())) {
+          flushInline();
+          const value = renderBlock(child);
+          if (value) blocks.push(value);
+        } else inline.push(renderInline(child));
       });
-      lines.push("  ".repeat(indent) + marker + " " + cleanInline(inline.join("")));
-      lines.push(...nested.filter(Boolean));
+      flushInline();
+      const continuation = " ".repeat(marker.length + 1);
+      const value = blocks.join("\n\n").split("\n")
+        .map((line, lineIndex) => lineIndex === 0 ? marker + " " + line : line ? continuation + line : "")
+        .join("\n");
+      chunks.push({ value, listItem: true });
     });
-    return lines.join("\n");
+    return chunks.map((chunk, chunkIndex) => {
+      const separator = chunkIndex === 0 ? "" : chunk.listItem && chunks[chunkIndex - 1].listItem ? "\n" : "\n\n";
+      return separator + chunk.value;
+    }).join("");
   }
 
   function renderTable(node) {
@@ -142,7 +163,7 @@
       while (content.includes(fence)) fence += "`";
       return fence + "\n" + content + "\n" + fence;
     }
-    if (tag === "ul" || tag === "ol") return renderList(node, 0);
+    if (tag === "ul" || tag === "ol") return renderList(node);
     if (tag === "table") return renderTable(node);
     if (tag === "blockquote") return renderBlocks(node).split("\n").map((line) => line ? "> " + line : ">").join("\n");
     if (tag === "hr") return "---";
@@ -257,9 +278,53 @@
     return { html: "<" + tag + startAttribute + ">" + items.join("") + "</" + tag + ">", index };
   }
 
-  function markdownToHtml(markdown) {
-    const source = String(markdown || "").replace(/\r\n?/g, "\n").trim();
-    if (!source) return "";
+  const codeLanguages = new Map([
+    "Plain Text", "ABAP", "Ada", "Apache", "Apex", "Assembly language", "Bash", "C", "C#", "C++",
+    "COBOL", "CSS", "CoffeeScript", "D", "Dart", "Delphi", "Django", "Dockerfile", "Erlang", "Fortran",
+    "FoxPro", "Gherkin", "Go", "Groovy", "HTML", "HTMLBars", "HTTP", "Haskell", "JSON", "Java",
+    "JavaScript", "Julia", "Kotlin", "LaTeX", "Lisp", "Logo", "Lua", "MATLAB", "Makefile", "Markdown",
+    "Nginx", "Objective-C", "OpenEdge ABL", "OpenGL Shading Language", "PHP", "Perl", "PostScript",
+    "PowerShell", "Prolog", "ProtoBuf", "Python", "R", "RPG", "Ruby", "Rust", "SAS", "SCSS", "SQL",
+    "Scala", "Scheme", "Scratch", "Shell", "Swift", "Thrift", "TypeScript", "VBScript", "Visual Basic", "XML", "YAML"
+  ].map((language) => [language.toLowerCase(), language]));
+  const codeLanguageAliases = {
+    js: "JavaScript", jsx: "JavaScript", ts: "TypeScript", tsx: "TypeScript", py: "Python", rb: "Ruby",
+    rs: "Rust", golang: "Go", sh: "Shell", zsh: "Shell", yml: "YAML", md: "Markdown", cpp: "C++",
+    csharp: "C#", cs: "C#", objc: "Objective-C", docker: "Dockerfile", ps1: "PowerShell", proto: "ProtoBuf",
+    text: "Plain Text", txt: "Plain Text", plaintext: "Plain Text"
+  };
+
+  function renderMarkdownCode(content, language) {
+    const key = language.toLowerCase();
+    const nativeLanguage = Object.hasOwn(codeLanguageAliases, key)
+      ? codeLanguageAliases[key] : codeLanguages.get(key) || "Plain Text";
+    const lang = " class=\"language-" + nativeLanguage + "\"" + (language ? " data-language=\"" + escapeHtml(language) + "\"" : "");
+    // Match Feishu's native clipboard HTML. Its code body lives inside a div;
+    // a text node directly under code can be imported outside an empty block.
+    return "<pre style=\"white-space:pre;\"><code" + lang + " data-lark-language=\"" + nativeLanguage
+      + "\" data-wrap=\"false\"><div>" + escapeHtml(content) + "</div></code></pre>";
+  }
+
+  function renderClipboardTable(header, rows) {
+    // Feishu's document tables carry ace-table and column widths, with a
+    // paragraph inside each td. Use that clipboard shape by default.
+    const columnWidth = 200;
+    const widths = header.map(() => columnWidth);
+    const rowHtml = (cells, isHeader) => "<tr>" + header.map((_, index) => {
+      const content = renderMarkdownInline(cells[index] || "");
+      const body = isHeader && content ? "<strong>" + content + "</strong>" : content || "<br>";
+      return '<td colspan="1" rowspan="1" style="border:1px solid rgb(222, 224, 227);font-size:10pt;padding:8px;vertical-align:top;">'
+        + '<div style="text-align:left" class="ace-line">' + body + '</div></td>';
+    }).join("") + "</tr>";
+    return '<div><table class="ace-table" data-ace-table-col-widths="' + widths.join(";")
+      + '" style="border:none;border-collapse:collapse;table-layout:fixed;width:' + columnWidth * header.length + 'px;">'
+      + '<colgroup>' + widths.map((width) => '<col width="' + width + '">').join("") + '</colgroup><tbody>'
+      + rowHtml(header, true) + rows.map((row) => rowHtml(row, false)).join("") + '</tbody></table></div>';
+  }
+
+  function markdownToHtml(markdown, forClipboard = false) {
+    const source = String(markdown || "").replace(/\r\n?/g, "\n");
+    if (!source.trim()) return "";
     const lines = source.split("\n");
     const output = [];
     let index = 0;
@@ -268,16 +333,16 @@
     while (index < lines.length) {
       const line = lines[index];
       if (!line.trim()) { index += 1; continue; }
-      const fence = line.match(/^\s*(```+|~~~+)\s*([^ ]*)?\s*$/);
-      if (fence) {
+      const fence = line.match(/^\s*(`{3,}|~{3,})[ \t]*(.*)$/);
+      if (fence && (fence[1][0] !== "`" || !fence[2].includes("`"))) {
         const marker = fence[1][0];
         const close = new RegExp("^\\s*" + marker + "{" + fence[1].length + ",}\\s*$");
         index += 1;
         const code = [];
         while (index < lines.length && !close.test(lines[index])) code.push(lines[index++]);
         if (index < lines.length) index += 1;
-        const lang = fence[2] ? " class=\"language-" + escapeHtml(fence[2]) + "\"" : "";
-        output.push("<pre><code" + lang + ">" + escapeHtml(code.join("\n")) + "</code></pre>");
+        const language = fence[2].trim().split(/\s+/)[0];
+        output.push(renderMarkdownCode(code.join("\n"), language));
         continue;
       }
       const heading = line.match(/^\s*(#{1,6})\s+(.+?)\s*#*\s*$/);
@@ -286,7 +351,7 @@
       if (/^\s*>/.test(line)) {
         const quote = [];
         while (index < lines.length && /^\s*>/.test(lines[index])) quote.push(lines[index++].replace(/^\s*> ?/, ""));
-        output.push("<blockquote>" + markdownToHtml(quote.join("\n")) + "</blockquote>");
+        output.push("<blockquote>" + markdownToHtml(quote.join("\n"), forClipboard) + "</blockquote>");
         continue;
       }
       if (index + 1 < lines.length && line.includes("|") && isTableSeparator(lines[index + 1])) {
@@ -294,6 +359,10 @@
         index += 2;
         const rows = [];
         while (index < lines.length && lines[index].trim() && lines[index].includes("|")) rows.push(splitTableRow(lines[index++]));
+        if (forClipboard) {
+          output.push(renderClipboardTable(header, rows));
+          continue;
+        }
         const width = header.length;
         const rowHtml = (cells, tag) => "<tr>" + Array.from({ length: width }, (_, i) => "<" + tag + ">" + renderMarkdownInline(cells[i] || "") + "</" + tag + ">").join("") + "</tr>";
         output.push("<table><thead>" + rowHtml(header, "th") + "</thead>" + (rows.length ? "<tbody>" + rows.map((row) => rowHtml(row, "td")).join("") + "</tbody>" : "") + "</table>");
@@ -323,5 +392,10 @@
     return output.join("");
   }
 
-  global.FeishuMarkdownConverter = { fromHtml, toHtml: markdownToHtml };
+  function toClipboardHtml(markdown) {
+    const html = markdownToHtml(markdown, true);
+    return html ? '<div data-lark-html-role="root" data-docx-has-block-data="false">' + html + '</div>' : "";
+  }
+
+  global.FeishuMarkdownConverter = { fromHtml, toHtml: markdownToHtml, toClipboardHtml };
 })(globalThis);

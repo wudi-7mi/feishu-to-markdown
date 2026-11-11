@@ -1,0 +1,12 @@
+main { max-width: 800px; }
+.source-url { overflow-wrap: anywhere; }
+.export-status { padding: 22px 0; margin: 12px 0 20px; border-bottom: 1px solid #e5e6eb; }
+.export-status .status-badge { margin-left: 0; font-size: 13px; }
+.export-status .status-badge.error { color: #b42318; background: #fcebea; }
+#detail { margin-top: 12px; color: #1f2329; }
+#stats { font-variant-numeric: tabular-nums; }
+.export-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.download-link { color: #245bdb; font-size: 13px; }
+.export-warnings { padding: 14px 16px 14px 32px; border-radius: 6px; background: #fff8e6; color: #795400; font-size: 13px; line-height: 1.7; }
+.export-help { margin-top: 24px; }
+[hidden] { display: none !important; }

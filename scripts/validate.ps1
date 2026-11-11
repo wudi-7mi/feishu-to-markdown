@@ -24,7 +24,7 @@ if (Test-Path -LiteralPath $firefoxManifestPath) {
 if ($manifest.manifest_version -ne 3) { throw "Manifest V3 is required" }
 if (!$manifest.name -or !$manifest.description) { throw "Manifest name and description are required" }
 
-foreach ($file in @("background.js", "content.js", "converter.js", "options.js")) {
+foreach ($file in @("background.js", "content.js", "converter.js", "options.js", "export.js", "export-network.js", "export-reader.js", "export-model.js", "export-worker.js")) {
   $path = Join-Path $root $file
   if (!(Test-Path -LiteralPath $path)) { throw "Missing runtime file: $file" }
   node --check $path
@@ -34,7 +34,10 @@ foreach ($file in @("background.js", "content.js", "converter.js", "options.js")
 node (Join-Path $root "scripts\test-converter.js")
 if ($LASTEXITCODE -ne 0) { throw "Converter tests failed" }
 
-foreach ($file in @("options.html", "options.css", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales\zh_CN\messages.json")) {
+node --test (Join-Path $root "scripts\test-export.js")
+if ($LASTEXITCODE -ne 0) { throw "Full-document export tests failed" }
+
+foreach ($file in @("options.html", "options.css", "export.html", "export.css", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales\zh_CN\messages.json")) {
   if (!(Test-Path -LiteralPath (Join-Path $root $file))) { throw "Missing referenced asset: $file" }
 }
 

@@ -36,13 +36,13 @@
 运行：
 
 ```powershell
-.\scripts\package.ps1
+.\scripts\package-browser.ps1 -Browser edge
 ```
 
 上传生成的：
 
 ```text
-dist/feishu-to-markdown-0.6.1.zip
+dist/feishu-to-markdown-edge-0.6.10.zip
 ```
 
 商店详情页另行上传：
@@ -52,3 +52,5 @@ store-assets/logo-300.png
 store-assets/small-promotional-tile-440x280.png
 store-assets/sc1280x800.png
 ```
+
+已有商店条目的更新步骤、审核备注及字段对应关系见 [Edge 商店更新指南](edge-update-guide.md)。本次版本说明见 [0.6.10 发布说明](release-notes-0.6.10.md)。

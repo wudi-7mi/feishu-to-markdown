@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全文导出 Markdown - 飞书 To Markdown</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="stylesheet" href="export.css">
+</head>
+<body>
+  <main>
+    <header>
+      <img class="logo" src="icon.svg" alt="">
+      <div><h1>全文导出 Markdown</h1><p>实验功能 · 使用当前飞书登录状态，直接导出当前文档。</p></div>
+    </header>
+    <section>
+      <h2 id="document-title">正在检查文档</h2>
+      <p id="source-url" class="source-url"></p>
+      <div class="export-status" role="status" aria-live="polite">
+        <span class="status-badge" id="status">准备中</span>
+        <p id="detail">请保留原文档标签页，导出期间暂停编辑。</p>
+        <p id="stats"></p>
+      </div>
+      <div class="export-actions">
+        <button class="secondary" id="source" type="button">返回原文档</button>
+        <button class="secondary" id="cancel" type="button" disabled>取消导出</button>
+        <button class="primary" id="retry" type="button" hidden>重新导出</button>
+        <button class="secondary" id="stream" type="button" hidden>直接写入文件</button>
+        <a class="download-link" id="download" hidden>重新下载 Markdown</a>
+      </div>
+      <p id="stream-hint" hidden>超大文档可选择“直接写入文件”，减少结果文件占用的内存。</p>
+      <ul id="warnings" class="export-warnings" hidden></ul>
+      <p class="export-help">关闭工具栏弹窗不影响此任务。请保持本页和原文档打开；取消或关闭本页后不保留文档内容。图片保留在线引用，复杂组件会标明需要在原文查看。</p>
+    </section>
+  </main>
+  <script src="export-network.js"></script>
+  <script src="export.js"></script>
+</body>
+</html>

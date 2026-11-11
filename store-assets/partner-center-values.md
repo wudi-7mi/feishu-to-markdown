@@ -14,7 +14,7 @@
 
 ## Privacy
 
-- Single purpose：在用户主动复制或粘贴时，在浏览器本地完成飞书富文本与 Markdown 的双向转换，并将结果写回剪贴板或当前飞书编辑器。
+- Single purpose：在用户主动复制、粘贴或导出时，在浏览器本地完成飞书文档与 Markdown 的格式转换，并将结果写回剪贴板、当前编辑器或用户选择的本地文件。
 - Remote code：No
 - Privacy policy URL：https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
 - Data collection：不通过开发者服务器收集、上传、出售或持久化保存用户数据；不使用统计分析或广告服务。

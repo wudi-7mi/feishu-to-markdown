@@ -5,6 +5,8 @@ const markdownPasteInput = document.getElementById("markdown-paste");
 const message = document.getElementById("message");
 const clipboardMessage = document.getElementById("clipboard-message");
 const convertClipboardButton = document.getElementById("convert-clipboard");
+const exportDocumentButton = document.getElementById("export-document");
+const exportMessage = document.getElementById("export-message");
 const grantButton = document.getElementById("grant");
 const featureStatus = document.getElementById("feature-status");
 const version = document.getElementById("version");
@@ -192,7 +194,7 @@ convertClipboardButton.addEventListener("click", async () => {
   try {
     const markdown = await navigator.clipboard.readText();
     if (!markdown.trim()) throw new Error("剪贴板中没有文本");
-    const html = globalThis.FeishuMarkdownConverter.toHtml(markdown);
+    const html = globalThis.FeishuMarkdownConverter.toClipboardHtml(markdown);
     if (!html) throw new Error("没有可转换的 Markdown 内容");
     if (!await writeRichClipboard(markdown, html)) throw new Error("浏览器拒绝写入剪贴板");
     clipboardMessage.textContent = "已转换，可回到飞书文档直接粘贴";
@@ -200,6 +202,24 @@ convertClipboardButton.addEventListener("click", async () => {
     clipboardMessage.textContent = error.message || "转换剪贴板失败";
     clipboardMessage.classList.add("error");
   }
+});
+
+exportDocumentButton.addEventListener("click", async () => {
+  exportDocumentButton.disabled = true;
+  exportMessage.textContent = "";
+  exportMessage.classList.remove("error");
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const url = new URL(tab?.url || "");
+    if (!/^https?:$/.test(url.protocol) || !/^\/(docx|wiki)\/[a-zA-Z0-9_-]+\/?$/.test(url.pathname)) {
+      throw new Error("请先切换到一篇飞书新版文档或知识库文档，再打开扩展");
+    }
+    const query = new URLSearchParams({ tab: String(tab.id), url: url.origin + url.pathname });
+    await chrome.tabs.create({ url: chrome.runtime.getURL("export.html?") + query, openerTabId: tab.id });
+  } catch (error) {
+    exportMessage.textContent = error.message;
+    exportMessage.classList.add("error");
+  } finally { exportDocumentButton.disabled = false; }
 });
 
 grantButton.addEventListener("click", async () => {

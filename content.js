@@ -7,6 +7,7 @@
   let markdownPasteEnabled = false;
   let listenerAttached = false;
   let copyInFlight = false;
+  let markdownPasteInFlight = false;
 
   function debugLog(...args) {
     if (DEBUG) console.info(LOG_PREFIX, ...args);
@@ -169,8 +170,41 @@
   }
 
   function editableContainer(target) {
-    if (!(target instanceof Element) || target.closest("input, textarea, [contenteditable='false']")) return null;
-    return target.closest("[contenteditable='true'], [contenteditable='plaintext-only']");
+    if (!(target instanceof Element) || target.closest("input, textarea, pre, code, [contenteditable='false'], [contenteditable='plaintext-only']")) return null;
+    return target.closest("[contenteditable='true']");
+  }
+
+  function isMarkdownSourceHtml(html, markdown) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    // Editors such as VS Code copy the literal Markdown with colored spans.
+    // Keep native Feishu data and rendered rich-text structures on their
+    // original paste path, even when their plain text resembles Markdown.
+    if (doc.querySelector("[data-lark-html-role], [data-lark-record-data], [data-docx-has-block-data]")) return false;
+    const sourceTags = new Set(["div", "span", "p", "br", "font"]);
+    if (Array.from(doc.body.querySelectorAll("*")).some((node) => !sourceTags.has(node.localName))) return false;
+    const compact = (text) => String(text || "").replace(/\s+/g, "");
+    return compact(doc.body.textContent) === compact(markdown);
+  }
+
+  function pasteRichHtml(target, markdown, html) {
+    // Let Feishu import blocks into its document model. Direct DOM insertion
+    // bypasses its paste importer and can flatten code into ordinary text.
+    try {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData("text/plain", markdown);
+      clipboardData.setData("text/html", html);
+      const paste = new ClipboardEvent("paste", {
+        clipboardData, bubbles: true, cancelable: true, composed: true
+      });
+      markdownPasteInFlight = true;
+      target.dispatchEvent(paste);
+      return paste.defaultPrevented;
+    } catch (error) {
+      debugWarn("editor rich paste unavailable", error);
+      return false;
+    } finally {
+      markdownPasteInFlight = false;
+    }
   }
 
   function insertRichHtml(html, container) {
@@ -193,14 +227,16 @@
   }
 
   function handlePaste(event) {
-    if (!markdownPasteEnabled || event.defaultPrevented || !event.clipboardData) return;
+    if (!markdownPasteEnabled || markdownPasteInFlight || event.defaultPrevented || !event.clipboardData || event.clipboardData.files.length) return;
     const container = editableContainer(event.target);
     if (!container) return;
     const explicitMarkdown = event.clipboardData.getData("text/markdown");
     const markdown = explicitMarkdown || event.clipboardData.getData("text/plain");
-    if (!markdown || (!explicitMarkdown && event.clipboardData.getData("text/html")) || !looksLikeMarkdown(markdown)) return;
-    const html = globalThis.FeishuMarkdownConverter.toHtml(markdown);
-    if (!html || !insertRichHtml(html, container)) return;
+    if (!markdown || !looksLikeMarkdown(markdown)) return;
+    const clipboardHtml = event.clipboardData.getData("text/html");
+    if (!explicitMarkdown && clipboardHtml && !isMarkdownSourceHtml(clipboardHtml, markdown)) return;
+    const html = globalThis.FeishuMarkdownConverter.toClipboardHtml(markdown);
+    if (!html || (!pasteRichHtml(event.target, markdown, html) && !insertRichHtml(html, container))) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     showToast("已粘贴为飞书格式", "success");
@@ -218,12 +254,13 @@
 
     if ((shortcutEnabled || markdownPasteEnabled) && !listenerAttached) {
       document.addEventListener("keydown", handleKeydown, true);
-      document.addEventListener("paste", handlePaste, true);
+      // Run before the editor's document-level capture listeners.
+      window.addEventListener("paste", handlePaste, true);
       listenerAttached = true;
       debugLog("enabled on matching page", { hostname: location.hostname });
     } else if (!shortcutEnabled && !markdownPasteEnabled && listenerAttached) {
       document.removeEventListener("keydown", handleKeydown, true);
-      document.removeEventListener("paste", handlePaste, true);
+      window.removeEventListener("paste", handlePaste, true);
       listenerAttached = false;
     }
   }

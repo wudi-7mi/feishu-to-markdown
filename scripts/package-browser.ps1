@@ -17,10 +17,15 @@ $distDirectory = Join-Path $projectRoot "dist"
 $packageName = "feishu-to-markdown-$Browser-$($manifest.version).zip"
 $packagePath = Join-Path $distDirectory $packageName
 $stagingDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("feishu-to-markdown-" + [guid]::NewGuid().ToString("N"))
+$safeStagingRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd([char[]]"\/") + [System.IO.Path]::DirectorySeparatorChar
+$stagingDirectory = [System.IO.Path]::GetFullPath($stagingDirectory)
+if (!$stagingDirectory.StartsWith($safeStagingRoot, [System.StringComparison]::OrdinalIgnoreCase) -or !(Split-Path -Leaf $stagingDirectory).StartsWith("feishu-to-markdown-")) {
+  throw "Unsafe staging directory: $stagingDirectory"
+}
 
 try {
   New-Item -ItemType Directory -Force -Path $distDirectory, $stagingDirectory | Out-Null
-  $runtimeFiles = @("background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png")
+  $runtimeFiles = @("background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "export.html", "export.css", "export.js", "export-network.js", "export-reader.js", "export-model.js", "export-worker.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png")
   foreach ($file in $runtimeFiles) { Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $stagingDirectory }
   Copy-Item -LiteralPath (Join-Path $projectRoot "_locales") -Destination $stagingDirectory -Recurse
   $manifestJson = $manifest | ConvertTo-Json -Depth 20

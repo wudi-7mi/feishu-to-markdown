@@ -1,11 +1,11 @@
 # Partner Center Privacy 表单填写稿
 
-以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.6.1` 版本代码和公开隐私政策一致。
+以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.6.10` 版本代码和公开隐私政策一致。
 
 ## Single purpose description
 
 ```text
-Feishu To Markdown locally converts rich-text content copied from Feishu or Lark documents into Markdown, and converts Markdown pasted by the user into rich-text HTML that Feishu can edit. Results are written only to the clipboard or the active Feishu editor in response to an explicit copy, paste, or Convert Clipboard action. It supports official Feishu/Lark domains and enterprise custom domains that the user explicitly adds and authorizes.
+Feishu To Markdown converts between Feishu/Lark documents and Markdown locally. It converts user-initiated copies and pastes, provides an explicit Convert Clipboard action, and exports the selected document to a local Markdown file when requested. Results go to the clipboard, active editor, or user-selected local file. It supports official Feishu/Lark domains and explicitly authorized enterprise custom domains.
 ```
 
 ## Permission justification
@@ -19,7 +19,13 @@ The storage permission is used only to save the copy-conversion setting, Markdow
 ### scripting justification
 
 ```text
-The scripting permission is used to dynamically register the extension's bundled content scripts only on enterprise custom domains that the user explicitly adds and authorizes. This is necessary because organizations that purchase Feishu services may access documents through their own custom domains. The extension does not download or execute remote code.
+The scripting permission registers bundled content scripts on enterprise custom domains explicitly authorized by the user. When the user clicks Export Current Document, bundled code also runs in the selected, configured and authorized document tab to make same-origin, read-only requests for document content and pagination. Cancellation aborts those requests. The browser supplies the current login state; the extension does not extract cookies or tokens, or execute downloaded code.
+```
+
+### activeTab justification
+
+```text
+The activeTab permission identifies the tab selected when the user opens the extension popup. Its URL is used to display whether the current domain is configured and authorized; its URL and title identify the source document for an explicit Export Current Document action. The extension does not inspect browsing history or other unrelated tabs.
 ```
 
 ### clipboardRead justification
@@ -37,7 +43,7 @@ The clipboardWrite permission is used to write locally converted Markdown togeth
 ### Host permission justification
 
 ```text
-Required host permissions are limited to official Feishu and Lark domains. On these domains, the bundled content script listens for user-initiated copy and paste actions and performs the conversion locally. The optional *://*/* declaration does not grant default access to all websites; it only allows Edge to show a permission prompt for an exact enterprise custom domain entered by the user. A dynamic content script is registered only after the user explicitly grants that domain. No other websites are accessed.
+Required host permissions are limited to official Feishu/Lark domains for user-initiated copy, paste, and document export. Export reads content only through same-origin requests from the selected authorized document tab. The optional *://*/* declaration only allows a permission prompt for an exact enterprise custom domain entered by the user; content scripts are registered after that grant. No unrelated websites are accessed.
 ```
 
 ## Are you using remote code?
@@ -60,7 +66,7 @@ All JavaScript, CSS, localization files, and image assets are included in the su
 
 选择“不收集用户数据”。如果页面显示数据类别复选框，则所有数据类别都不勾选。
 
-审核解释：扩展会在用户设备上临时处理用户主动复制的网页富文本，但不会将其传输给开发者或第三方，不会上传、出售或持久化保存，因此不属于开发者收集的用户数据。扩展也不使用服务器、统计分析、广告或跟踪服务。
+审核解释：复制、粘贴和导出内容在用户浏览器内临时处理，不会传给开发者或第三方，不出售或用于统计、广告、跟踪。全文导出只向文档原网站发送读取正文所需的同源请求，使用浏览器已有登录状态，不提取 Cookie 或令牌；仅按用户要求将结果保存为本地文件。
 
 ### Privacy policy URL
 
@@ -80,7 +86,7 @@ https://github.com/wudi-7mi/feishu-to-markdown/blob/main/PRIVACY.md
 
 ## Consistency check
 
-- Single purpose 与商店描述一致：Ctrl+C 将飞书文档转换为 Markdown。
+- Single purpose 与商店描述一致：在用户主动复制、粘贴或导出时完成飞书文档与 Markdown 的本地格式转换。
 - 权限理由与 `manifest.json` 一致。
 - 数据声明与 `PRIVACY.md` 一致。
 - Remote code 选择 No。
