@@ -1,5 +1,5 @@
 "use strict";
-// Local, authenticated-page fixtures; no Feishu account or external requests.
+// Local clipboard and extension fixtures; no Feishu account or external requests.
 const assert = require("node:assert/strict");
 const http = require("node:http");
 const fs = require("node:fs");
@@ -9,7 +9,7 @@ const { spawn, execFileSync } = require("node:child_process");
 const { setTimeout: delay } = require("node:timers/promises");
 const root = path.resolve(__dirname, "..");
 const browserPath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), "feishu-export-browser-"));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), "feishu-browser-"));
 
 class CDP {
   constructor(url) {
@@ -112,75 +112,10 @@ async function testHtmlConversion(client, contextId) {
 let sourceClient;
 let sourceContext;
 let base;
-let mode = "large";
-let apiCalls = 0;
-let active = 0;
-let maxActive = 0;
-let capturedFile = "";
-const text = (value) => ({ initialAttributedTexts: { text: { 0: value }, attribs: {} }, apool: { numToAttrib: {} } });
-const block = (type, parent, value, children = []) => ({ children, data: { type, parent_id: parent, text: text(value) } });
-const total = 10000;
-const ids = Array.from({ length: total }, (_, index) => "b" + index);
-const server = http.createServer(async (request, response) => {
-  const url = new URL(request.url, base || "http://localhost");
-  try {
-    if (url.pathname === "/__execute") {
-      const chunks = [];
-      for await (const chunk of request) chunks.push(chunk);
-      const data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-      const result = await sourceClient.evaluate(data.code, sourceContext);
-      response.setHeader("content-type", "application/json");
-      response.end(JSON.stringify([{ result }]));
-      return;
-    }
-    if (url.pathname === "/__download") {
-      const chunks = [];
-      for await (const chunk of request) chunks.push(chunk);
-      capturedFile = Buffer.concat(chunks).toString("utf8");
-      response.end("ok");
-      return;
-    }
-    if (url.pathname === "/docx/document") {
-      response.setHeader("set-cookie", "fixture_session=valid; SameSite=Strict; Path=/");
-      response.setHeader("content-type", "text/html;charset=utf-8");
-      response.end("<!doctype html><title>长文档测试</title><script>window.exportLongTasks=[];new PerformanceObserver(list=>exportLongTasks.push(...list.getEntries().map(e=>e.duration))).observe({type:'longtask',buffered:true})</script><p>源文档</p>");
-      return;
-    }
-    if (url.pathname === "/space/api/docx/pages/client_vars") {
-      if (!request.headers.cookie?.includes("fixture_session=valid")) { response.writeHead(403); response.end(); return; }
-      apiCalls += 1;
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await delay(mode === "slow" ? 250 : 1);
-      const offset = Number(url.searchParams.get("cursor") || 0);
-      const map = offset === 0 ? { root: block("page", "", "浏览器长文档", ids) } : {};
-      for (let index = offset; index < Math.min(total, offset + 200); index += 1) map["b" + index] = block("text", "root", "第" + index + "段" + "长文档测试".repeat(20));
-      const more = offset + 200 < total;
-      response.setHeader("content-type", "application/json");
-      response.end(JSON.stringify({ code: 0, data: { block_map: map, document_revision_id: "1", has_more: more,
-        cursor: more ? (mode === "stuck" ? "0" : String(offset + 200)) : "" } }));
-      active -= 1;
-      return;
-    }
-    if (url.pathname === "/browser-shim.js") {
-      response.setHeader("content-type", "application/javascript");
-      response.end(`window.chrome={tabs:{get:async()=>({id:1,url:${JSON.stringify(base + "/docx/document")},title:'长文档测试'}),update:async()=>{}},
-        storage:{sync:{get:async()=>({domains:['127.0.0.1']})}},permissions:{contains:async()=>true},
-        scripting:{executeScript:async options=>{const code='('+options.func.toString()+')(...'+JSON.stringify(options.args)+')';
-          return (await fetch('/__execute',{method:'POST',body:JSON.stringify({code})})).json()}}};
-        HTMLAnchorElement.prototype.click=function(){if(this.href.startsWith('blob:'))fetch(this.href).then(r=>r.text()).then(body=>fetch('/__download',{method:'POST',body}));};
-        window.__streamText='';window.__streamClosed=false;window.showSaveFilePicker=async()=>({createWritable:async()=>({
-          write:async bytes=>{window.__streamText+=new TextDecoder().decode(bytes);},close:async()=>{window.__streamClosed=true;},abort:async()=>{window.__streamText='';}
-        })});`);
-      return;
-    }
-    const filename = url.pathname.slice(1);
-    if (!/^[a-z-]+\.(html|js|css)$/.test(filename)) { response.writeHead(404); response.end(); return; }
-    let content = fs.readFileSync(path.join(root, filename));
-    if (filename === "export.html") content = content.toString().replace('<script src="export-network.js">', '<script src="browser-shim.js"></script><script src="export-network.js">');
-    response.setHeader("content-type", filename.endsWith(".js") ? "application/javascript" : filename.endsWith(".css") ? "text/css" : "text/html");
-    response.end(content);
-  } catch (error) { response.writeHead(500); response.end(error.message); }
+const server = http.createServer((request, response) => {
+  if (request.url !== '/docx/document') { response.writeHead(404); response.end(); return; }
+  response.setHeader('content-type', 'text/html;charset=utf-8');
+  response.end('<!doctype html><title>复制粘贴测试</title><p>本机文档</p>');
 });
 
 async function main() {
@@ -190,8 +125,6 @@ async function main() {
   const browser = spawn(browserPath, ["--headless=new", "--remote-debugging-port=0", "--user-data-dir=" + profile,
     "--enable-unsafe-extension-debugging", "--no-first-run", "--no-default-browser-check", "--disable-background-networking", "about:blank"], { windowsHide: true, stdio: "ignore" });
   const browserExited = new Promise(resolve => browser.once("exit", resolve));
-  let task;
-  let extensionTask;
   let extensionOptions;
   let extensionPopup;
   let browserClient;
@@ -222,59 +155,12 @@ async function main() {
     sourceContext = (await sourceClient.send("Page.createIsolatedWorld", { frameId: frameTree.frame.id, worldName: "fixture-extension" })).executionContextId;
     await testHtmlConversion(sourceClient, sourceContext);
     await require("./paste-browser-fixture.js")(sourceClient, sourceContext);
-    task = await create(base + "/export.html?tab=1&url=" + encodeURIComponent(base + "/docx/document"));
-    try {
-      await waitFor(async () => {
-        const result = await task.evaluate("({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent})");
-        if (result.status === "导出未完成") throw new Error("Browser fixture export failed: " + result.detail);
-        return result.status.startsWith("已导出");
-      });
-    } catch (error) {
-      const state = await task.evaluate("({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent,stats:document.getElementById('stats').textContent})");
-      throw new Error(error.message + "; fixture state: " + JSON.stringify({ ...state, apiCalls, active, maxActive }));
-    }
-    await waitFor(() => capturedFile.length > 1000000);
-    assert.equal((capturedFile.match(/第\d+段/g) || []).length, total);
-    assert.equal(apiCalls, 51);
-    assert.ok(maxActive <= 2);
-    const metrics = await sourceClient.evaluate("({longTasks:exportLongTasks.length,maxTask:Math.max(0,...exportLongTasks)})");
-    console.log("Browser UI + authenticated requests + worker: " + JSON.stringify({ characters: capturedFile.length, apiCalls, maxActive, ...metrics }));
-
-    await task.evaluate("document.getElementById('stream').click()");
-    await waitFor(async () => await task.evaluate("window.__streamClosed"));
-    assert.equal(await task.evaluate("(window.__streamText.match(/第\\d+段/g)||[]).length"), total);
-    console.log("Browser streaming output passed");
-
-    mode = "slow";
-    await task.evaluate("document.getElementById('retry').click()");
-    await waitFor(async () => await task.evaluate("!document.getElementById('cancel').disabled"));
-    await delay(50);
-    await task.evaluate("document.getElementById('cancel').click()");
-    await waitFor(async () => await task.evaluate("document.getElementById('status').textContent === '已取消'"));
-    await delay(350);
-    assert.equal(await sourceClient.evaluate("globalThis.__feishuMarkdownExportRequests?.size || 0", sourceContext), 0);
-    console.log("Browser cancellation aborts source requests");
-
-    mode = "stuck";
-    await task.evaluate("document.getElementById('retry').click()");
-    await waitFor(async () => await task.evaluate("document.getElementById('status').textContent === '导出未完成'"));
-    assert.match(await task.evaluate("document.getElementById('detail').textContent"), /没有取得新内容|游标重复/);
-    assert.equal(await task.evaluate("document.getElementById('download').hidden"), true);
-    console.log("Browser repeated-page failure is visible and does not download");
-
-    const network = fs.readFileSync(path.join(root, "export-network.js"), "utf8");
-    await sourceClient.evaluate(network, sourceContext);
-    const rejected = await sourceClient.evaluate("fetchDocumentPage(location.href,'https://unrelated.invalid/data','test',1)", sourceContext);
-    assert.equal(rejected.retryable, false);
-    assert.match(rejected.error, /不合法/);
-    console.log("Browser same-origin path restriction passed");
-
     // Exercise the real MV3 APIs/CSP using the original toolbar popup.
     const protocol = await (await fetch(debugging + "/json/protocol")).json();
     if (protocol.domains.some(domain => domain.domain === "Extensions" && domain.commands.some(command => command.name === "loadUnpacked"))) {
       const extensionDirectory = path.join(profile, "fixture-extension");
       fs.mkdirSync(extensionDirectory);
-      for (const name of ["background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "export.html", "export.css", "export.js", "export-network.js", "export-reader.js", "export-model.js", "export-worker.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales"]) {
+      for (const name of ["background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales"]) {
         fs.cpSync(path.join(root, name), path.join(extensionDirectory, name), { recursive: true });
       }
       const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
@@ -282,9 +168,6 @@ async function main() {
       manifest.host_permissions.push("http://127.0.0.1/*");
       fs.writeFileSync(path.join(extensionDirectory, "manifest.json"), JSON.stringify(manifest));
       const { id } = await browserClient.send("Extensions.loadUnpacked", { path: extensionDirectory });
-      const downloads = path.join(profile, "fixture-downloads");
-      fs.mkdirSync(downloads);
-      await browserClient.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
       extensionOptions = await create("chrome-extension://" + id + "/options.html");
       await extensionOptions.evaluate("chrome.storage.sync.set({domains:['127.0.0.1']})");
       const sourceTab = await extensionOptions.evaluate("chrome.tabs.query({}).then(tabs=>tabs.find(tab=>tab.url===" + JSON.stringify(base + "/docx/document") + "))");
@@ -327,33 +210,16 @@ async function main() {
       extensionPopup = await openPopup();
       assert.equal(await extensionPopup.evaluate("document.getElementById('replace-copy').checked"), false);
       assert.equal(await extensionPopup.evaluate("document.getElementById('markdown-paste').checked"), false);
-      console.log("Native toolbar popup: switches persist and rich clipboard conversion passed");
+      assert.equal(await extensionPopup.evaluate("document.getElementById('export-document')"), null);
+      assert.equal(await extensionPopup.evaluate("document.body.textContent.includes('导出当前文档')"), false);
+      console.log("Real MV3 popup: settings persist, code/table clipboard conversion passes, no full-document export entry");
 
-      mode = "large";
-      await extensionPopup.evaluate("document.getElementById('export-document').click()");
-      const exportTarget = await waitFor(async () => (await (await fetch(debugging + "/json/list")).json())
-        .find(target => target.url.startsWith("chrome-extension://" + id + "/export.html?")));
-      extensionTask = new CDP(exportTarget.webSocketDebuggerUrl);
-      await waitFor(() => extensionTask.evaluate("document.readyState==='complete' && Boolean(document.getElementById('status'))").catch(() => false));
-      await waitFor(async () => {
-        const state = await extensionTask.evaluate("({status:document.getElementById('status').textContent,detail:document.getElementById('detail').textContent})");
-        if (state.status === "导出未完成") throw new Error("Extension export failed: " + state.detail);
-        return state.status.startsWith("已导出");
-      });
-      const downloaded = path.join(downloads, "浏览器长文档.md");
-      await waitFor(() => fs.existsSync(downloaded));
-      assert.equal((fs.readFileSync(downloaded,"utf8").match(/第\d+段/g)||[]).length, total);
-      assert.equal(new URL(exportTarget.url).searchParams.get("tab"), String(sourceTab.id));
-      assert.equal((await extensionTask.evaluate("chrome.tabs.getCurrent()")).openerTabId, sourceTab.id);
-      console.log("Real MV3 extension: toolbar popup, Worker CSP, source document and full-document download passed");
-    } else console.log("Real extension phase skipped: installed browser lacks Extensions.loadUnpacked; browser fixture coverage passed");
+    } else console.log("Real extension phase skipped: browser lacks Extensions.loadUnpacked; clipboard fixture coverage passed");
   } finally {
     if (browserClient) await Promise.race([browserClient.send("Browser.close").catch(() => {}), delay(2000)]);
     if (extensionPopup) extensionPopup.close();
-    if (extensionTask) extensionTask.close();
     if (extensionOptions) extensionOptions.close();
     if (browserClient) browserClient.close();
-    if (task) task.close();
     if (sourceClient) sourceClient.close();
     await Promise.race([browserExited, delay(2000)]);
     if (browser.exitCode === null && browser.signalCode === null) {
@@ -363,7 +229,7 @@ async function main() {
     await new Promise(resolve => server.close(resolve));
     await delay(300);
     const resolved = path.resolve(profile);
-    if (resolved.startsWith(path.resolve(os.tmpdir()) + path.sep) && path.basename(resolved).startsWith("feishu-export-browser-")) {
+    if (resolved.startsWith(path.resolve(os.tmpdir()) + path.sep) && path.basename(resolved).startsWith("feishu-browser-")) {
       fs.rmSync(resolved, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
     }
   }

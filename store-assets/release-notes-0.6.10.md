@@ -1,5 +1,7 @@
 # 飞书 To Markdown 0.6.10
 
+此历史版本包含已移除的全文导出功能，已由 [0.6.11](https://github.com/wudi-7mi/feishu-to-markdown/releases/tag/v0.6.11) 替代。请使用 0.6.11 的发布包提交 Edge 商店。
+
 发布日期：2026-11-11
 
 ## 更新内容

@@ -1,8 +1,8 @@
 # Certification Notes
 
-## Changes in version 0.6.10
+## Changes in version 0.6.11
 
-Markdown paste now uses Feishu-compatible code blocks and document tables. Source text copied with syntax-highlighting HTML is recognized, including Markdown fences containing JSON code fences. Copying nested lists preserves paragraphs, code, tables, and images. The toolbar also includes an experimental Export Current Document action for supported document and wiki pages. The declared permission list is unchanged.
+The direct full-document export feature has been removed, including its UI, pages, Worker and document API request code. The extension only converts user-initiated copies, pastes, and explicit Convert Clipboard actions. Code-block fixes, document tables, syntax-highlighted Markdown source detection and nested-list preservation remain available. The declared permission list is unchanged; scripting is used only to register bundled scripts for authorized custom domains, and activeTab displays the current domain status.
 
 ## Copy test
 
@@ -21,22 +21,15 @@ Markdown paste now uses Feishu-compatible code blocks and document tables. Sourc
 3. Paste into a blank document paragraph. The code must remain inside a populated code block, preserving indentation and blank lines. The table should become a document table.
 4. Open the popup and click "转换剪贴板", then paste in the document to exercise explicit clipboard conversion.
 
-## Full-document export test
-
-1. With a supported document or wiki page active, open the popup and click "导出当前文档". The source domain must be configured and authorized, and the account must have access to the document.
-2. A separate extension task tab opens and downloads a local Markdown file after reading and converting the document. The source page remains open.
-3. On a longer document, cancel an export and retry. Cancellation stops outstanding document requests. Failed or incomplete reads show an error instead of reporting a successful download.
-4. Export is experimental. Images remain online references; unsupported components produce visible placeholders or warnings.
-
 ## Test document
 
 Copy-test document URL: https://www.feishu.cn/docx/doxcnyzM1jOYaHHvJF6BtyrXpjb
 
-No account credentials are included in the extension. The developer must verify this document's sharing settings before submission. A read-only document can cover copy testing; paste needs an editable document, and full export needs an accessible supported document. Provide reviewer-accessible documents and any necessary test-account instructions in Partner Center.
+No account credentials are included in the extension. The developer must verify this document's sharing settings before submission. A read-only document can cover copy testing; paste needs an editable document. Provide reviewer-accessible documents and any necessary test-account instructions in Partner Center.
 
 ## Expected behavior
 
 - The extension remains silent on domains that aren't configured and authorized.
-- Copy, paste, and conversion run locally. Full export makes same-origin, read-only requests to the original document website using the browser's existing login state; document contents are not sent to the developer or third parties.
-- Document contents are only saved when the user requests a local export. The extension does not extract cookies or access tokens.
+- Copy, paste, and clipboard conversion run locally. No document content APIs are requested and document contents are not sent to the developer or third parties.
+- The popup has no full-document export action. No export pages or Worker are packaged, and the extension does not download document files or extract cookies or access tokens.
 - The extension contains no remote code.
