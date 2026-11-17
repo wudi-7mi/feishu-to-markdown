@@ -42,7 +42,7 @@
 上传生成的：
 
 ```text
-dist/feishu-to-markdown-edge-0.6.11.zip
+dist/feishu-to-markdown-edge-0.6.15.zip
 ```
 
 商店详情页另行上传：
@@ -53,4 +53,4 @@ store-assets/small-promotional-tile-440x280.png
 store-assets/sc1280x800.png
 ```
 
-已有商店条目的更新步骤、审核备注及字段对应关系见 [Edge 商店更新指南](edge-update-guide.md)。本次版本说明见 [0.6.11 发布说明](release-notes-0.6.11.md)。0.6.10 包含已移除的全文导出功能，请使用 0.6.11 发布包提交。
+已有商店条目的更新步骤、审核备注及字段对应关系见 [Edge 商店更新指南](edge-update-guide.md)。本次版本说明见 [0.6.15 发布说明](release-notes-0.6.15.md)。0.6.10 包含已移除的全文导出功能，请使用当前发布包提交。

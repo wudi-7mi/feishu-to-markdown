@@ -1,8 +1,33 @@
 # Certification Notes
 
-## Changes in version 0.6.11
+## Changes in version 0.6.15
 
-The direct full-document export feature has been removed, including its UI, pages, Worker and document API request code. The extension only converts user-initiated copies, pastes, and explicit Convert Clipboard actions. Code-block fixes, document tables, syntax-highlighted Markdown source detection and nested-list preservation remain available. The declared permission list is unchanged; scripting is used only to register bundled scripts for authorized custom domains, and activeTab displays the current domain status.
+This version preserves additional clipboard-provided styles and layouts through sanitized embedded HTML: color, background, underline, sub/superscripts, alignment/indent, higher heading semantics, callouts, columns, details, and merged/styled tables. Code languages, existing formula sources, and static reference links are also extracted. KaTeX (MIT) is bundled for local MathML output; no CDN, remote scripts, new permissions, or document/component APIs are used. Native formula paste is not promised: explicit source preserves both the formula and adjacent text. Existing unavailable-component placeholders, table export and live-toggle fixes remain included.
+
+## Rich format test and limitations
+
+1. Copy text with foreground/background colors and underline, a language-tagged code block, and a merged table. Inspect Markdown: styles/merges use embedded HTML and code fences include the available language. Test a renderer that permits HTML/CSS; renderers such as GitHub may remove styles.
+2. Paste equivalent Markdown/HTML into an editable test document. In the provided enterprise editor, text colors/background/underline, centered paragraphs, merged cells, column widths and populated JavaScript code were verified through actual native paste. The importer flattens columns, folding, higher heading levels and HTML table lists, and may discard cell appearance. Matching its own copied table HTML without private metadata did not restore list numbering either.
+3. Copy a native equation whose clipboard contains LaTeX and inspect the Markdown delimiters. Pasting formula Markdown back should explicitly show the source and preserve the paragraphs before and after it. Standalone native equation HTML can disappear and a partial attributed-text pool can override other text; the extension does not generate or reuse opaque document metadata.
+
+## Unavailable component test
+
+1. Copy a document section containing a whiteboard and an unavailable-content message. Paste into a Markdown editor. With a `whiteboard` type in the copied HTML, it should show a descriptive whiteboard placeholder instead of the generic message.
+2. Repeat with other component types available to the reviewer, such as a mind map. A specific label requires an explicit type hint; content without one must say its type could not be identified. A mind map drawn inside a whiteboard remains a whiteboard if that is the only type provided.
+3. Check that neighboring paragraphs, a copied preview image, and any original link are retained. An example message quoted inside a code block should remain code, and copying a generated placeholder again should not duplicate it.
+
+## Table cell list test
+
+1. Copy a document table with a paragraph followed by four numbered items inside one cell. Paste into a Markdown editor: the paragraph and each item should remain separated, with numbering preserved.
+2. Copy that Markdown table and paste it into an editable Feishu/Lark paragraph. Cell text and item boundaries should remain; whether numbering and editable list structure survive depends on the target importer. The tested enterprise editor flattens HTML table lists to ordinary paragraphs.
+3. Repeat with a nested bullet list, a checked task, and inline code containing the literal text `<br>` or a pipe. Inspect Markdown and generated HTML for nesting, task state and code text. Repeat to verify that header text and list items do not accumulate formatting or duplicate.
+
+## Live toggle test
+
+1. Turn off both conversion switches in the toolbar popup, then open a Feishu/Lark document.
+2. Enable copy conversion in the popup without reloading the document. Select formatted content, press Ctrl+C, and paste into a plain-text editor; Markdown should be produced.
+3. Disable copy conversion and repeat the copy; the extension should leave the clipboard unchanged. Enable it again and verify that conversion happens once per copy.
+4. Enable Markdown paste conversion without reloading and paste Markdown into an editable paragraph; it should become rich text.
 
 ## Copy test
 

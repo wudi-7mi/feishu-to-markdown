@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Keep the bundled library byte-for-byte identical to its recorded SHA-256.
+vendor/katex.min.js -text

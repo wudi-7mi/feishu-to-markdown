@@ -3,11 +3,21 @@
   const LOG_PREFIX = "[Feishu MD][content]";
   const DEFAULT_DOMAINS = ["feishu.cn", "feishuapp.cn", "larksuite.com"];
   const DEBUG = false;
+  const stateKey = "__feishuMarkdownContentState";
+  const version = chrome.runtime?.getManifest?.().version || "development";
+  const previous = globalThis[stateKey];
+  if (previous?.version === version) {
+    previous.refresh().catch((error) => debugWarn("settings refresh failed", error));
+    return;
+  }
+  previous?.dispose();
   let shortcutEnabled = false;
   let markdownPasteEnabled = false;
-  let listenerAttached = false;
   let copyInFlight = false;
   let markdownPasteInFlight = false;
+  let settingsGeneration = 0;
+  let disposed = false;
+  const storageChanges = chrome.storage.onChanged;
 
   function debugLog(...args) {
     if (DEBUG) console.info(LOG_PREFIX, ...args);
@@ -94,8 +104,10 @@
     retryLoop: for (const retryTime of retryTimes) {
       const wait = Math.max(0, retryTime - (performance.now() - startedAt));
       if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+      if (disposed || !shortcutEnabled) break;
       try {
         const items = await navigator.clipboard.read();
+        if (disposed || !shortcutEnabled) break;
         let clipboardHtml = "";
         let clipboardText = "";
 
@@ -140,6 +152,7 @@
   async function replaceCtrlCCopy(fallbackSelection) {
     try {
       const { markdown, html } = await readClipboardPayload(fallbackSelection);
+      if (disposed || !shortcutEnabled) return;
       if (!markdown) {
         showToast("飞书复制尚未完成，请再按一次 Ctrl+C", "error");
         return;
@@ -163,6 +176,7 @@
   function looksLikeMarkdown(text) {
     const value = String(text || "").trim();
     if (!value) return false;
+    if (globalThis.FeishuRichHtml?.looksLikeSource(value)) return true;
     return /^(?:\s{0,3}#{1,6}\s|\s*>\s?|\s*(?:[-*+] |\d+[.)] )|\s*```|\s*~~~|\s*(?:-{3,}|\*{3,}|_{3,})\s*$)/m.test(value)
       || /(?:\*\*[^*\n]+\*\*|~~[^~\n]+~~|`[^`\n]+`|!?\[[^\]]+\]\([^\s)]+\))/.test(value)
       || /(?:^|[^*])\*[^*\n]+\*(?!\*)|(?:^|[^_])_[^_\n]+_(?!_)/m.test(value)
@@ -243,33 +257,42 @@
   }
 
   async function syncShortcut() {
+    const generation = ++settingsGeneration;
     const { domains = DEFAULT_DOMAINS, replaceCtrlC = true, convertMarkdownPaste = true } = await chrome.storage.sync.get({
       domains: DEFAULT_DOMAINS,
       replaceCtrlC: true,
       convertMarkdownPaste: true
     });
+    if (disposed || generation !== settingsGeneration) return;
     const domainEnabled = domains.some((domain) => matchesDomain(location.hostname.toLowerCase(), domain));
     shortcutEnabled = replaceCtrlC && domainEnabled;
     markdownPasteEnabled = convertMarkdownPaste && domainEnabled;
+    debugLog("settings synchronized", { hostname: location.hostname, shortcutEnabled, markdownPasteEnabled });
+  }
 
-    if ((shortcutEnabled || markdownPasteEnabled) && !listenerAttached) {
-      document.addEventListener("keydown", handleKeydown, true);
-      // Run before the editor's document-level capture listeners.
-      window.addEventListener("paste", handlePaste, true);
-      listenerAttached = true;
-      debugLog("enabled on matching page", { hostname: location.hostname });
-    } else if (!shortcutEnabled && !markdownPasteEnabled && listenerAttached) {
-      document.removeEventListener("keydown", handleKeydown, true);
-      window.removeEventListener("paste", handlePaste, true);
-      listenerAttached = false;
+  function handleStorageChange(changes, areaName) {
+    if (areaName === "sync" && (changes.domains || changes.replaceCtrlC || changes.convertMarkdownPaste)) {
+      syncShortcut().catch((error) => debugWarn("settings refresh failed", error));
     }
   }
 
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "sync" && (changes.domains || changes.replaceCtrlC || changes.convertMarkdownPaste)) syncShortcut();
-  });
+  function dispose() {
+    disposed = true;
+    settingsGeneration += 1;
+    shortcutEnabled = false;
+    markdownPasteEnabled = false;
+    window.removeEventListener("keydown", handleKeydown, true);
+    window.removeEventListener("paste", handlePaste, true);
+    storageChanges.removeListener?.(handleStorageChange);
+  }
 
-  syncShortcut();
+  globalThis[stateKey] = { version, refresh: syncShortcut, dispose };
+  // Install once, even when disabled. Flags gate all clipboard processing, and
+  // window capture runs before Feishu's document-level key/paste handlers.
+  window.addEventListener("keydown", handleKeydown, true);
+  window.addEventListener("paste", handlePaste, true);
+  storageChanges.addListener(handleStorageChange);
+  syncShortcut().catch((error) => debugWarn("initial settings read failed", error));
 
   function showToast(message, tone) {
     document.getElementById("feishu-md-toast")?.remove();

@@ -36,7 +36,7 @@ async function syncCustomDomainScripts() {
   const existingMatches = [...(existing?.matches || [])].sort();
   const registrationUnchanged = existing
     && JSON.stringify(existingMatches) === JSON.stringify(matches)
-    && JSON.stringify(existing.js || []) === JSON.stringify(["converter.js", "content.js"])
+    && JSON.stringify(existing.js || []) === JSON.stringify(["vendor/katex.min.js", "rich-html.js", "converter.js", "content.js"])
     && existing.runAt === "document_idle"
     && existing.allFrames === true;
   if (registrationUnchanged) return;
@@ -45,24 +45,54 @@ async function syncCustomDomainScripts() {
   await chrome.scripting.registerContentScripts([{
     id: SCRIPT_ID,
     matches: [...new Set(matches)],
-    js: ["converter.js", "content.js"],
+    js: ["vendor/katex.min.js", "rich-html.js", "converter.js", "content.js"],
     runAt: "document_idle",
     allFrames: true,
     persistAcrossSessions: true
   }]);
 }
 
+async function activateOpenPages() {
+  const { domains = [...DEFAULT_DOMAINS], replaceCtrlC = true, convertMarkdownPaste = true } = await chrome.storage.sync.get({
+    domains: [...DEFAULT_DOMAINS], replaceCtrlC: true, convertMarkdownPaste: true
+  });
+  if (!replaceCtrlC && !convertMarkdownPaste) return;
+  const configured = [...new Set(domains.map(normalizeDomain).filter(Boolean))];
+  const candidates = configured.flatMap((domain) => ["https", "http"].flatMap((scheme) => [
+    scheme + "://" + domain + "/*", scheme + "://*." + domain + "/*"
+  ]));
+  const granted = await Promise.all(candidates.map((pattern) => chrome.permissions.contains({ origins: [pattern] })));
+  const matches = candidates.filter((_, index) => granted[index]);
+  if (!matches.length) return;
+  const tabs = await chrome.tabs.query({ url: matches });
+  await Promise.allSettled(tabs.map(async (tab) => {
+    if (!Number.isInteger(tab.id) || !tab.url) return;
+    let url;
+    try { url = new URL(tab.url); } catch (_) { return; }
+    if (!/^https?:$/.test(url.protocol) || !configured.some((domain) => url.hostname === domain || url.hostname.endsWith("." + domain))) return;
+    if (!await chrome.permissions.contains({ origins: [url.origin + "/*"] })) return;
+    // Registration affects future loads. Activate bundled conversion scripts in
+    // existing authorized pages too; content.js prevents duplicate listeners.
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true }, files: ["vendor/katex.min.js", "rich-html.js", "converter.js", "content.js"]
+    });
+  }));
+}
+
 function scheduleSync() {
   syncQueue = syncQueue
     .catch(() => undefined)
     .then(syncCustomDomainScripts)
+    .then(activateOpenPages)
     .catch((error) => console.error("[Feishu MD][background] script sync failed", error));
+  return syncQueue;
 }
 
 chrome.runtime.onInstalled.addListener(scheduleSync);
 chrome.runtime.onStartup.addListener(scheduleSync);
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "sync" && changes.domains) scheduleSync();
+  if (areaName === "sync" && (changes.domains || changes.replaceCtrlC || changes.convertMarkdownPaste)) return scheduleSync();
 });
 chrome.permissions.onAdded.addListener(scheduleSync);
 chrome.permissions.onRemoved.addListener(scheduleSync);
+scheduleSync();

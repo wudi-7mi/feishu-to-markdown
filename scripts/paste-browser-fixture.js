@@ -160,6 +160,16 @@ module.exports = async function testMarkdownPaste(client, contextId, contentSour
     result = await paste({ 'text/plain': '> | 名称 | 含义 |\n> | --- | --- |\n> | value | 示例 |' });
     assert.ok(result.events[0].html.includes('class="ace-table"'), 'Quoted tables must use the same default document-table type');
 
+    result = await paste({ 'text/plain': '| 项目 | 步骤 |\n| --- | --- |\n| 示例 | 说明<br><br>1. 准备<br><br>&nbsp;&nbsp;&nbsp;- 子步骤<br>2. 完成 |' });
+    assert.equal(result.events.length, 1, 'A table with lists must be imported exactly once');
+    const tableLists = await client.evaluate('((html) => {' +
+      'const doc=new DOMParser().parseFromString(html,"text/html"); const cell=doc.querySelector("table.ace-table").rows[1].cells[1];' +
+      'return {paragraph:cell.querySelector(":scope > div.ace-line")?.textContent,' +
+      'items:Array.from(cell.querySelectorAll("ol.list-number1 > li[data-list=number] > div"),li=>li.textContent),' +
+      'children:Array.from(cell.querySelectorAll("ol > li > ul.list-bullet1 > li[data-list=bullet] > div"),li=>li.textContent)};' +
+      '})(' + JSON.stringify(result.events[0].html) + ')');
+    assert.deepEqual(tableLists, {paragraph:'说明',items:['准备','完成'],children:['子步骤']}, 'List bodies and nesting must reach the editor importer inside the table cell');
+
     // Optional real sample supplied by a local debug runner. Keep its contents
     // in memory and only print counts, never document text or clipboard HTML.
     if (clipboardSample) {

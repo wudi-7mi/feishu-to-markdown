@@ -1,6 +1,6 @@
 # Partner Center Privacy 表单填写稿
 
-以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.6.11` 版本代码和公开隐私政策一致。
+以下英文内容可直接粘贴到 Microsoft Edge Partner Center。所有描述均与 `0.6.15` 版本代码和公开隐私政策一致。
 
 ## Single purpose description
 
@@ -19,7 +19,7 @@ The storage permission is used only to save the copy-conversion setting, Markdow
 ### scripting justification
 
 ```text
-The scripting permission dynamically registers the extension's bundled content scripts on enterprise custom domains explicitly added and authorized by the user. These scripts handle user-initiated copy and paste conversions. The extension does not call document content APIs, read complete documents automatically, or download and execute remote code.
+The scripting permission registers bundled conversion scripts on enterprise custom domains explicitly added and authorized by the user. When a conversion feature is enabled or domain access is granted, it also loads those bundled scripts into already-open pages on configured and authorized domains so conversion works without reloading. The scripts only process user-initiated copy and paste actions while the corresponding feature is enabled. The extension does not call document content APIs, read complete documents automatically, or download and execute remote code.
 ```
 
 ### activeTab justification
@@ -57,7 +57,7 @@ No
 ### Remote code justification
 
 ```text
-All JavaScript, CSS, localization files, and image assets are included in the submitted extension package. The extension does not use external scripts, CDN-hosted code, eval(), remotely imported modules, downloaded executable code, or WebAssembly.
+All JavaScript, CSS, localization files, and image assets are included in the submitted extension package. KaTeX is bundled under MIT for local MathML output; it does not fetch scripts, fonts or styles. The extension does not use external scripts, CDN-hosted code, eval(), remotely imported modules, downloaded executable code, or WebAssembly.
 ```
 
 ## Data usage

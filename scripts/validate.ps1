@@ -24,15 +24,24 @@ if (Test-Path -LiteralPath $firefoxManifestPath) {
 if ($manifest.manifest_version -ne 3) { throw "Manifest V3 is required" }
 if (!$manifest.name -or !$manifest.description) { throw "Manifest name and description are required" }
 
-foreach ($file in @("background.js", "content.js", "converter.js", "options.js")) {
+foreach ($file in @("background.js", "content.js", "converter.js", "rich-html.js", "vendor\katex.min.js", "options.js")) {
   $path = Join-Path $root $file
   if (!(Test-Path -LiteralPath $path)) { throw "Missing runtime file: $file" }
   node --check $path
   if ($LASTEXITCODE -ne 0) { throw "JavaScript syntax check failed: $file" }
 }
 
+foreach ($file in @("vendor\katex.LICENSE", "vendor\katex.VERSION.json")) {
+  if (!(Test-Path -LiteralPath (Join-Path $root $file))) { throw "Missing bundled library attribution: $file" }
+}
+$mathMetadata = Get-Content -LiteralPath (Join-Path $root "vendor\katex.VERSION.json") -Raw | ConvertFrom-Json
+if ((Get-FileHash -LiteralPath (Join-Path $root "vendor\katex.min.js") -Algorithm SHA256).Hash.ToLower() -ne $mathMetadata.sha256) { throw "Bundled math library hash mismatch" }
+
 node (Join-Path $root "scripts\test-converter.js")
 if ($LASTEXITCODE -ne 0) { throw "Converter tests failed" }
+
+node --test (Join-Path $root "scripts\test-background.js")
+if ($LASTEXITCODE -ne 0) { throw "Background activation tests failed" }
 
 foreach ($file in @("options.html", "options.css", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales\zh_CN\messages.json")) {
   if (!(Test-Path -LiteralPath (Join-Path $root $file))) { throw "Missing referenced asset: $file" }

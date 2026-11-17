@@ -1,4 +1,6 @@
 /dist/
+/.playwright-mcp/
+/%SystemDrive%/
 *.zip
 Thumbs.db
 .DS_Store

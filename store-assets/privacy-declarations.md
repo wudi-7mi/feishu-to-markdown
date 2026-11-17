@@ -9,7 +9,7 @@
 - `storage`：保存用户设置的复制开关、Markdown 粘贴转换开关和生效域名列表。
 - `clipboardRead`：仅在用户主动复制、粘贴或点击“转换剪贴板”后读取 HTML 或纯文本，以便在本地转换。
 - `clipboardWrite`：将本地转换完成的 Markdown 与原始富文本一同写回剪贴板，或将 Markdown 转换后的 HTML 写回剪贴板。
-- `scripting`：在用户主动授权的企业自定义域名注册扩展内置的复制、粘贴处理脚本。
+- `scripting`：为用户授权的企业自定义域名注册内置转换脚本，并在开启功能或授权域名后，向已配置且已授权的现有页面加载相同脚本，使其无需刷新即可生效。
 - `activeTab`：用户打开弹窗时读取当前标签页地址，用于显示域名生效状态。
 - `https://*.feishu.cn/*`、`https://*.feishuapp.cn/*`、`https://*.larksuite.com/*`：在飞书和 Lark 文档页面监听用户主动发起的复制与粘贴，并执行本地格式转换。
 - 可选网站访问权限：只在用户通过设置页主动添加并授权企业自定义域名时申请，用于在该域名运行相同的本地转换功能。
@@ -19,6 +19,8 @@
 选择：No, I am not using remote code.
 
 所有 JavaScript、CSS 和图片资源均包含在扩展包内，不下载或执行远程代码。
+
+KaTeX 以 MIT 许可证随包提供，仅在本地将已有公式源码转换为 MathML；不加载 CDN、字体或远程脚本。内嵌 HTML 经过标签、CSS 和 URL 允许列表过滤。
 
 ## Data Usage
 

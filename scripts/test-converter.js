@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+globalThis.katex = require("../vendor/katex.min.js");
+require("../rich-html.js");
 require("../converter.js");
 
 const { toHtml, toClipboardHtml } = globalThis.FeishuMarkdownConverter;
@@ -36,6 +38,16 @@ assert.ok(clipboardTable.includes('<div style="text-align:left" class="ace-line"
 assert.equal((clipboardTable.match(/<td\b/g) || []).length, 4);
 assert.equal((clipboardTable.match(/<col\s/g) || []).length, 2);
 assert.ok(toClipboardHtml("> | 名称 | 状态 |\n> | --- | --- |\n> | 文档 | 完成 |").includes('class="ace-table"'));
+assert.equal(
+  toHtml('| 项目 | 内容 |\n| --- | --- |\n| 步骤 | 说明<br><br>1. 准备<br>2. 完成 |'),
+  '<table><thead><tr><th>项目</th><th>内容</th></tr></thead><tbody><tr><td>步骤</td><td><p>说明</p><ol><li>准备</li><li>完成</li></ol></td></tr></tbody></table>'
+);
+assert.ok(toHtml('| A | B |\n| --- | --- |\n| value | first<BR/>second<br />third |').includes('<td>first<br>second<br>third</td>'));
+assert.ok(toHtml('| A | B |\n| --- | --- |\n| value | `<br>` and \\<br> |').includes('<td><code>&lt;br&gt;</code> and &lt;br&gt;</td>'));
+assert.ok(toHtml('| A | B |\n| --- | --- |\n| value | <br onclick="evil()"><script>evil()</script> |').includes('&lt;br onclick=&quot;evil()&quot;&gt;&lt;script&gt;evil()&lt;/script&gt;'));
+assert.ok(toClipboardHtml('| A | B |\n| --- | --- |\n| value | 7. parent<br><br>&nbsp;&nbsp;&nbsp;- child<br>8. next |').includes('<ol start="7" class="list-number1"><li class="ace-line" data-list="number"><div>parent</div><ul class="list-bullet1">'));
+assert.ok(toHtml('| A | B |\n| --- | --- |\n| value | - <br>- next |').includes('<ul><li></li><li>next</li></ul>'));
+assert.ok(toHtml('| A | B |\n| --- | --- |\n| # literal | --- |').includes('<td># literal</td><td>---</td>'));
 assert.equal(
   toHtml("```js\nconst value = \"<tag>\";\n```") ,
   "<pre style=\"white-space:pre;\"><code class=\"language-JavaScript\" data-language=\"js\" data-lark-language=\"JavaScript\" data-wrap=\"false\"><div>const value = &quot;&lt;tag&gt;&quot;;</div></code></pre>"

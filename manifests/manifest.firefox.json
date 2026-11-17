@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "0.6.11",
+  "version": "0.6.15",
   "description": "__MSG_extensionDescription__",
   "default_locale": "zh_CN",
   "homepage_url": "https://github.com/wudi-7mi/feishu-to-markdown",
@@ -30,7 +30,7 @@
         "https://*.feishuapp.cn/*",
         "https://*.larksuite.com/*"
       ],
-      "js": ["converter.js", "content.js"],
+      "js": ["vendor/katex.min.js", "rich-html.js", "converter.js", "content.js"],
       "run_at": "document_idle",
       "all_frames": true
     }

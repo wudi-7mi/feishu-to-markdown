@@ -15,7 +15,7 @@ $runtimeFiles = @(
   "manifest.json",
   "background.js",
   "content.js",
-  "converter.js",
+  "converter.js", "rich-html.js",
   "options.html",
   "options.css",
   "options.js",
@@ -33,6 +33,7 @@ try {
   foreach ($file in $runtimeFiles) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $stagingDirectory
   }
+  Copy-Item -LiteralPath (Join-Path $projectRoot "vendor") -Destination $stagingDirectory -Recurse
   Copy-Item -LiteralPath (Join-Path $projectRoot "_locales") -Destination $stagingDirectory -Recurse
 
   if (Test-Path -LiteralPath $packagePath) {

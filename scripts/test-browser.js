@@ -52,11 +52,11 @@ async function waitFor(predicate, timeout = 20000) {
 }
 
 async function testHtmlConversion(client, contextId) {
-  await client.evaluate(fs.readFileSync(path.join(root, "converter.js"), "utf8"), contextId);
+  for (const file of ["vendor/katex.min.js", "rich-html.js", "converter.js"]) await client.evaluate(fs.readFileSync(path.join(root, file), "utf8"), contextId);
   // Opt-in local regression: keep the actual document in memory; print only counts.
   if (process.argv.includes("--clipboard-sample")) {
-    const sample = JSON.parse(execFileSync("powershell.exe", ["-NoProfile", "-STA", "-Command",
-      "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); Add-Type -AssemblyName System.Windows.Forms; $sample = [Windows.Forms.Clipboard]::GetDataObject(); @{html=[string]$sample.GetData([Windows.Forms.DataFormats]::Html);text=[string]$sample.GetData([Windows.Forms.DataFormats]::UnicodeText)} | ConvertTo-Json -Compress"
+    const sample = JSON.parse(execFileSync("powershell.exe", ["-NoProfile", "-STA", "-File",
+      path.join(root, "scripts", "read-clipboard.ps1")
     ], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }));
     assert.ok(sample.html, "Copy rich document content before running --clipboard-sample");
     const fragment = sample.html.match(/<!--StartFragment-->([\s\S]*?)<!--EndFragment-->/)?.[1] || sample.html;
@@ -67,18 +67,23 @@ async function testHtmlConversion(client, contextId) {
       "const output = compact(markdown);" +
       "const codes = Array.from(doc.querySelectorAll('pre'));" +
       "const cells = Array.from(doc.querySelectorAll('td,th'));" +
+      "const contentText=node=>{const clone=node.cloneNode(true);clone.querySelectorAll('.block-paste-placeholder,[data-lark-record-data]').forEach(node=>node.remove());return clone.textContent};" +
       "const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT); const chunks = [];" +
-      "for (let node; (node = walker.nextNode());) { if (node.parentElement.closest('script,style,noscript,template,head')) continue; const value = compact(node.nodeValue); if (value.length >= 8) chunks.push(value); }" +
+      "for (let node; (node = walker.nextNode());) { if (node.parentElement.closest('script,style,noscript,template,head,.block-paste-placeholder,[data-lark-record-data]')) continue; const value = compact(node.nodeValue); if (value.length >= 8) chunks.push(value); }" +
       "return {htmlCharacters:html.length,plainCharacters:plain.length,markdownCharacters:markdown.length," +
       "tables:doc.querySelectorAll('table').length,codeBlocks:codes.length,tableCells:cells.length," +
       "missingCodeBlocks:codes.filter(node=>!output.includes(compact(node.textContent))).length," +
-      "missingTableCells:cells.filter(node=>!output.includes(compact(node.textContent))).length," +
+      "missingTableCells:cells.filter(node=>!output.includes(compact(contentText(node)))).length," +
+      "copiedPlaceholders:doc.querySelectorAll('.block-paste-placeholder').length," +
+      "typedPlaceholders:(markdown.match(/\\[(?:思维导图|画板|流程图\\/图表|电子表格|多维表格|视频|音频|附件|嵌入内容|文档小组件|同步块|群名片|投票)：/g)||[]).length," +
+      "unknownPlaceholders:(markdown.match(/\\[未识别的飞书内容块：/g)||[]).length," +
       "checkedTextChunks:chunks.length,missingTextChunks:chunks.filter(value=>!output.includes(value)).length};" +
       "})(" + JSON.stringify(fragment) + "," + JSON.stringify(sample.text) + ")", contextId);
     console.log("Local clipboard conversion: " + JSON.stringify(metrics));
     assert.equal(metrics.missingCodeBlocks, 0, "Code blocks were dropped from the copied HTML");
     assert.equal(metrics.missingTableCells, 0, "Table cell content was dropped from the copied HTML");
     assert.equal(metrics.missingTextChunks, 0, "Visible text was dropped from the copied HTML");
+    assert.ok(metrics.typedPlaceholders + metrics.unknownPlaceholders >= metrics.copiedPlaceholders, "Copied placeholders must remain identifiable in Markdown");
   }
   const cases = [
     {
@@ -154,13 +159,17 @@ async function main() {
     const { frameTree } = await sourceClient.send("Page.getFrameTree");
     sourceContext = (await sourceClient.send("Page.createIsolatedWorld", { frameId: frameTree.frame.id, worldName: "fixture-extension" })).executionContextId;
     await testHtmlConversion(sourceClient, sourceContext);
+    await require("./table-browser-fixture.js")(sourceClient, sourceContext);
+    await require("./unsupported-browser-fixture.js")(sourceClient, sourceContext);
+    await require("./rich-browser-fixture.js")(sourceClient, sourceContext);
     await require("./paste-browser-fixture.js")(sourceClient, sourceContext);
+    await require("./toggle-browser-fixture.js")(sourceClient, frameTree.frame.id);
     // Exercise the real MV3 APIs/CSP using the original toolbar popup.
     const protocol = await (await fetch(debugging + "/json/protocol")).json();
     if (protocol.domains.some(domain => domain.domain === "Extensions" && domain.commands.some(command => command.name === "loadUnpacked"))) {
       const extensionDirectory = path.join(profile, "fixture-extension");
       fs.mkdirSync(extensionDirectory);
-      for (const name of ["background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales"]) {
+      for (const name of ["vendor", "rich-html.js", "background.js", "content.js", "converter.js", "options.html", "options.css", "options.js", "icon.svg", "icon16.png", "icon32.png", "icon48.png", "icon128.png", "_locales"]) {
         fs.cpSync(path.join(root, name), path.join(extensionDirectory, name), { recursive: true });
       }
       const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
@@ -169,7 +178,7 @@ async function main() {
       fs.writeFileSync(path.join(extensionDirectory, "manifest.json"), JSON.stringify(manifest));
       const { id } = await browserClient.send("Extensions.loadUnpacked", { path: extensionDirectory });
       extensionOptions = await create("chrome-extension://" + id + "/options.html");
-      await extensionOptions.evaluate("chrome.storage.sync.set({domains:['127.0.0.1']})");
+      await extensionOptions.evaluate("chrome.storage.sync.set({domains:['127.0.0.1'],replaceCtrlC:false,convertMarkdownPaste:false})");
       const sourceTab = await extensionOptions.evaluate("chrome.tabs.query({}).then(tabs=>tabs.find(tab=>tab.url===" + JSON.stringify(base + "/docx/document") + "))");
       let lastPopupId = null;
       const openPopup = async () => {
@@ -186,9 +195,10 @@ async function main() {
         await waitFor(() => client.evaluate("document.getElementById('domain-status').textContent==='已生效'"));
         return client;
       };
+      await require("./extension-toggle-browser-fixture.js")(sourceClient, extensionOptions, sourceTab, openPopup, waitFor);
       extensionPopup = await openPopup();
       assert.equal(await extensionPopup.evaluate("typeof FeishuMarkdownConverter.toHtml"), "function");
-      assert.deepEqual(await extensionPopup.evaluate("Array.from(document.scripts,script=>script.getAttribute('src'))"), ["converter.js", "options.js"]);
+      assert.deepEqual(await extensionPopup.evaluate("Array.from(document.scripts,script=>script.getAttribute('src'))"), ["vendor/katex.min.js", "rich-html.js", "converter.js", "options.js"]);
       await extensionPopup.evaluate("document.getElementById('replace-copy').click();document.getElementById('markdown-paste').click()");
       await waitFor(() => extensionOptions.evaluate("chrome.storage.sync.get(['replaceCtrlC','convertMarkdownPaste']).then(s=>s.replaceCtrlC===false&&s.convertMarkdownPaste===false)"));
       // Test the rich clipboard conversion without changing the OS clipboard.
